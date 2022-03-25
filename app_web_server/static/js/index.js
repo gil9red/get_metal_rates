@@ -13,7 +13,10 @@ $.noty.defaults.timeout = 6000;
 function fill_table() {
     return $(SELECTOR_METAL_RATES).DataTable({
         data: window.items,
-        lengthMenu: [ [10, 25, 50, -1], ["10 записей", "25 записей", "50 записей", "Все записи"] ],
+        lengthMenu: [
+            [5, 10, 25, 50, -1],
+            ["5 записей", "10 записей", "25 записей", "50 записей", "Все записи"]
+        ],
         columns: [
             { title: "Дата", data: 'date', render: date_render },
             { title: "Золото", data: 'gold', type: 'num' },
@@ -27,7 +30,7 @@ function fill_table() {
             search: "Поиск:",
             lengthMenu: "_MENU_",
             zeroRecords: "Записи отсутствуют.",
-            info: "Записи с _START_ до _END_ из _TOTAL_ записей",
+            info: "Записи с _START_ до _END_ из _TOTAL_",
             infoEmpty: "Записи с 0 до 0 из 0 записей",
             infoFiltered: "(отфильтровано из _MAX_ записей)",
             paginate: {
