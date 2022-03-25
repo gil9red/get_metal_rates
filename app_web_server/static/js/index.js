@@ -5,10 +5,6 @@ const SELECTOR_CHART_ID = "lineChart";
 const SELECTOR_SELECT_METAL = "#select_metal";
 const SELECTOR_USE_FOR_UPDATES_CHART = '.use_for_updates_chart';
 
-$.noty.defaults.theme = 'defaultTheme';
-$.noty.defaults.layout = 'bottomRight';
-$.noty.defaults.timeout = 6000;
-
 
 function fill_table() {
     return $(SELECTOR_METAL_RATES).DataTable({
