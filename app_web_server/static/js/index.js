@@ -34,6 +34,7 @@ function fill_table() {
                 next: '→',
             }
         },
+        responsive: true,
     });
 }
 
