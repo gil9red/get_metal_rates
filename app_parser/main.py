@@ -8,8 +8,8 @@ import time
 
 import db
 
-from common import log
-from parser import get_metal_rates, get_pair_dates
+from root_common import log
+from app_parser.parser import get_metal_rates, get_pair_dates
 
 
 while True:
@@ -26,7 +26,7 @@ while True:
                     rates = get_metal_rates(date_req1, date_req2)
 
                     log.info(f'Найдено: {len(rates)}')
-                    if not rates:  # TODO: move logic to get_metal_rates?
+                    if not rates:
                         log.info('Ничего не вернулось, похоже на ошибку сервиса. Нужно повторить')
                         time.sleep(60)
                         continue

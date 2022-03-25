@@ -6,13 +6,13 @@ __author__ = 'ipetrash'
 
 import datetime as DT
 import decimal
-import enum
 from dataclasses import dataclass
+from decimal import Decimal
 
 import requests
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 
-from config import START_DATE, FILE_COOKIES
+from app_parser.config import FILE_COOKIES, START_DATE
 
 
 decimal.getcontext().prec = 2
@@ -33,41 +33,13 @@ if FILE_COOKIES.exists():
         pass
 
 
-class AutoName(enum.Enum):
-    def _generate_next_value_(name, start, count, last_values):
-        return name
-
-
-class MetalEnum(AutoName):
-    Gold = enum.auto()
-    Silver = enum.auto()
-    Platinum = enum.auto()
-    Palladium = enum.auto()
-
-    @classmethod
-    def get_from(cls, code: int) -> 'MetalEnum':
-        match code:
-            case 1: return cls.Gold
-            case 2: return cls.Silver
-            case 3: return cls.Platinum
-            case 4: return cls.Palladium
-
-        raise KeyError(f'Unknown code {code}!')
-
-
 @dataclass
 class MetalRate:
     date: DT.date
-    metal: MetalEnum
-    amount: decimal.Decimal
-
-    @classmethod
-    def parse_from_xml(cls, tag: Tag) -> 'MetalRate':
-        date = DT.datetime.strptime(tag['date'], '%d.%m.%Y').date()
-        code = int(tag['code'])
-        amount = decimal.Decimal(tag.sell.text.replace(',', '.'))
-
-        return cls(date, MetalEnum.get_from(code), amount)
+    gold: Decimal = None
+    silver: Decimal = None
+    platinum: Decimal = None
+    palladium: Decimal = None
 
 
 def get_next_date(date: DT.date) -> DT.date:
@@ -107,10 +79,25 @@ def get_metal_rates(date_req1: DT.date, date_req2: DT.date) -> list[MetalRate]:
     rs.raise_for_status()
 
     root = BeautifulSoup(rs.content, 'html.parser')
-    return [
-        MetalRate.parse_from_xml(r)
-        for r in root.select('Record')
-    ]
+    date_by_metal_rate = dict()
+
+    for tag in root.select('Record'):
+        date = DT.datetime.strptime(tag['date'], '%d.%m.%Y').date()
+        code = int(tag['code'])
+        amount = decimal.Decimal(tag.sell.text.replace(',', '.'))
+
+        if date not in date_by_metal_rate:
+            date_by_metal_rate[date] = MetalRate(date)
+
+        metal_rate = date_by_metal_rate[date]
+
+        match code:
+            case 1: metal_rate.gold = amount
+            case 2: metal_rate.silver = amount
+            case 3: metal_rate.platinum = amount
+            case 4: metal_rate.palladium = amount
+
+    return list(date_by_metal_rate.values())
 
 
 if __name__ == '__main__':

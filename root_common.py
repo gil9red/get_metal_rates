@@ -3,13 +3,12 @@
 
 __author__ = 'ipetrash'
 
-
 import logging
 import sys
 
 from pathlib import Path
 
-from config import DIR_LOGS
+from root_config import DIR_LOGS
 
 
 def get_logger(file_name: str, dir_name='logs'):

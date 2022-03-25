@@ -9,7 +9,7 @@ import enum
 import time
 
 from decimal import Decimal
-from typing import Type, Optional, List, Iterable, Any
+from typing import Type, Optional, Iterable, Any
 
 # pip install peewee
 from peewee import (
@@ -17,10 +17,9 @@ from peewee import (
 )
 from playhouse.sqliteq import SqliteQueueDatabase
 
-import parser
-
-from config import DB_FILE_NAME, ITEMS_PER_PAGE, START_DATE
-from parser import MetalEnum
+from root_config import DB_FILE_NAME, ITEMS_PER_PAGE
+from app_parser.config import START_DATE
+from app_parser import parser
 
 
 # SOURCE: https://github.com/gil9red/SimplePyScripts/blob/cd5bf42742b2de4706a82aecb00e20ca0f043f8e/shorten.py
@@ -96,7 +95,7 @@ class BaseModel(Model):
             items_per_page: int = ITEMS_PER_PAGE,
             order_by: Field = None,
             filters: Iterable = None,
-    ) -> List[Type['BaseModel']]:
+    ) -> list[Type['BaseModel']]:
         query = cls.select()
 
         if filters:
@@ -109,7 +108,7 @@ class BaseModel(Model):
         return list(query)
 
     @classmethod
-    def get_inherited_models(cls) -> List[Type['BaseModel']]:
+    def get_inherited_models(cls) -> list[Type['BaseModel']]:
         return sorted(cls.__subclasses__(), key=lambda x: x.__name__)
 
     @classmethod
@@ -149,34 +148,53 @@ class BaseModel(Model):
 
 
 class MetalRate(BaseModel):
-    date = DateField()
-    metal = EnumField(choices=MetalEnum)
-    amount = DecimalField(decimal_places=2)
-
-    class Meta:
-        indexes = (
-            (('date', 'metal'), True),
-        )
+    date = DateField(unique=True)
+    gold = DecimalField(decimal_places=2, null=True)
+    silver = DecimalField(decimal_places=2, null=True)
+    platinum = DecimalField(decimal_places=2, null=True)
+    palladium = DecimalField(decimal_places=2, null=True)
 
     @classmethod
-    def get_by(cls, date: DT.date, metal: MetalEnum) -> Optional['MetalRate']:
-        return cls.get_or_none(date=date, metal=metal)
+    def get_by(cls, date: DT.date) -> Optional['MetalRate']:
+        return cls.get_or_none(date=date)
 
     @classmethod
-    def add(cls, date: DT.date, metal: MetalEnum, amount: Decimal) -> 'MetalRate':
-        obj = cls.get_by(date, metal)
+    def add(
+            cls,
+            date: DT.date,
+            gold: Decimal = None,
+            silver: Decimal = None,
+            platinum: Decimal = None,
+            palladium: Decimal = None,
+    ) -> 'MetalRate':
+        obj = cls.get_by(date)
         if not obj:
             obj = cls.create(
                 date=date,
-                metal=metal,
-                amount=amount,
+                gold=gold,
+                silver=silver,
+                platinum=platinum,
+                palladium=palladium,
             )
 
         return obj
 
     @classmethod
     def add_from(cls, metal_rate: parser.MetalRate) -> 'MetalRate':
-        return cls.add(metal_rate.date, metal_rate.metal, metal_rate.amount)
+        return cls.add(
+            date=metal_rate.date,
+            gold=metal_rate.gold,
+            silver=metal_rate.silver,
+            platinum=metal_rate.platinum,
+            palladium=metal_rate.palladium,
+        )
+
+    @classmethod
+    def get_range_dates(cls) -> tuple[DT.date, DT.date]:
+        return (
+            cls.select(cls.date).limit(1).order_by(cls.date.asc()).first().date,
+            cls.select(cls.date).limit(1).order_by(cls.date.desc()).first().date
+        )
 
     @classmethod
     def get_last_date(cls) -> DT.date:
@@ -184,25 +202,27 @@ class MetalRate(BaseModel):
 
     @classmethod
     def get_last_dates(cls, number: int) -> list[DT.date]:
-        query = cls.select(cls.date).distinct().limit(number).order_by(cls.date.desc())
+        query = cls.select(cls.date).limit(number).order_by(cls.date.desc())
         items = [rate.date for rate in query]
         if not items:
             items.append(START_DATE)
         return items
 
     @classmethod
-    def get_last_rates_as_dict(cls, number: int) -> dict[DT.date, dict[MetalEnum, Decimal]]:
-        date_by_rates = dict()
-
+    def get_last_rates(cls, number: int, ignore_null: bool = True) -> list['MetalRate']:
         dates = cls.get_last_dates(number)
-        query = cls.select().where(cls.date.in_(dates)).order_by(cls.date.asc(), cls.metal.asc())
-        for rate in query:
-            if rate.date not in date_by_rates:
-                date_by_rates[rate.date] = dict()
+        filters = [cls.date.in_(dates)]
+        if ignore_null:
+            # Все металлы должны быть заданы
+            filters += [
+                cls.gold.is_null(False),
+                cls.silver.is_null(False),
+                cls.platinum.is_null(False),
+                cls.palladium.is_null(False),
+            ]
 
-            date_by_rates[rate.date][rate.metal] = rate.amount
-
-        return date_by_rates
+        query = cls.select().where(*filters).order_by(cls.date.asc())
+        return list(query)
 
 
 db.connect()
@@ -214,42 +234,46 @@ time.sleep(0.050)
 
 if __name__ == '__main__':
     BaseModel.print_count_of_tables()
-    # MetalRate: 21830
+    # MetalRate: 5512
     print()
 
     print('Last date:', MetalRate.get_last_date())
-    # Last date: 2022-03-03
+    # Last date: 2022-03-25
+
+    start_date, end_date = MetalRate.get_range_dates()
+    print(f'Range dates: {start_date} - {end_date}')
+    # Range dates: 2000-01-06 - 2022-03-25
 
     dates = MetalRate.get_last_dates(number=7)
     print('Last 7 dates:', [str(d) for d in dates])
-    # Last 7 dates: ['2022-03-03', '2022-03-02', '2022-03-01', '2022-02-26', '2022-02-25', '2022-02-23', '2022-02-22']
+    # Last 7 dates: ['2022-03-25', '2022-03-24', '2022-03-23', '2022-03-22', '2022-03-19', '2022-03-18', '2022-03-17']
 
     print()
 
-    date_by_rates = MetalRate.get_last_rates_as_dict(number=3)
-    for date, metal_by_amount in date_by_rates.items():
-        print(f'{date}:')
-
-        for metal, amount in metal_by_amount.items():
-            print(f'    {metal.name}: {amount}')
-
-        print()
+    for metal_rate in MetalRate.get_last_rates(number=3):
+        print(
+            f'{metal_rate.date}:\n'
+            f'    Gold: {metal_rate.gold}\n'
+            f'    Silver: {metal_rate.silver}\n'
+            f'    Platinum: {metal_rate.platinum}\n'
+            f'    Palladium: {metal_rate.palladium}\n'
+        )
     """
-    2022-03-01:
-        Gold: 5725.1
-        Palladium: 7492.89
-        Platinum: 3197.49
-        Silver: 72.82
+    2022-03-23:
+        Gold: 6455.72
+        Silver: 83.77
+        Platinum: 3446.44
+        Palladium: 8515.72
     
-    2022-03-02:
-        Gold: 5664.73
-        Palladium: 7565.96
-        Platinum: 3123.72
-        Silver: 71.82
+    2022-03-24:
+        Gold: 6408.41
+        Silver: 83.2
+        Platinum: 3396.33
+        Palladium: 8507.4
     
-    2022-03-03:
-        Gold: 6393.4
-        Palladium: 8800.05
-        Platinum: 3531.97
-        Silver: 81.79
+    2022-03-25:
+        Gold: 6008.83
+        Silver: 77.24
+        Platinum: 3162.05
+        Palladium: 7920.57
     """
