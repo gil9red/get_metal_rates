@@ -28,6 +28,7 @@ def draw_plot(
         title: str = None,
         color: str = 'orange',
         date_format: str = DATE_FORMAT,
+        axis_off: bool = False,
         show: bool = False
 ):
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter(date_format))
@@ -40,6 +41,10 @@ def draw_plot(
         plt.xlabel(title)
 
     plt.gcf().autofmt_xdate()
+
+    if axis_off:
+        plt.gca().set_xticks([])
+        plt.gca().set_yticks([])
 
     plt.savefig(out)
 
@@ -68,4 +73,10 @@ if __name__ == '__main__':
 
     DIR = Path(__file__).resolve().parent
     path = DIR / 'plot_gold.png'
-    draw_plot(out=path, days=days, values=values, locator=locator, title=title, show=True)
+    draw_plot(
+        out=path,
+        days=days, values=values,
+        locator=locator,
+        title=title,
+        show=True
+    )
