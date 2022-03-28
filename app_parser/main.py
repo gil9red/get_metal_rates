@@ -18,6 +18,8 @@ while True:
         start_date = db.MetalRate.get_last_date()
         log.info(f"Поиск от {start_date}\n")
 
+        metal_rate_count = db.MetalRate.count()
+
         for date_req1, date_req2 in get_pair_dates(start_date):
             log.info(f'Поиск за {date_req1} - {date_req2}')
 
@@ -25,7 +27,7 @@ while True:
                 try:
                     rates = get_metal_rates(date_req1, date_req2)
 
-                    log.info(f'Найдено: {len(rates)}')
+                    log.info(f'Найдено {len(rates)} записей из API')
                     if not rates:
                         log.info('Ничего не вернулось, похоже на ошибку сервиса. Нужно повторить')
                         time.sleep(60)
@@ -42,6 +44,9 @@ while True:
                 break
 
             time.sleep(60)
+
+        diff_count = db.MetalRate.count() - metal_rate_count
+        log.info(f'Добавлено записей: {diff_count}' if diff_count else 'Новый записей нет')
 
     except Exception:
         log.exception('Ошибка:')
