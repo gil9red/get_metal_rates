@@ -106,9 +106,7 @@ function get_chart_data() {
     let labels = [];
     let data = [];
 
-    window.table.rows().every(function() {
-        let row = this.data();
-
+    window.items.forEach(row => {
         let date = new Date(row.date_iso);
         if (date < from_date || date > to_date) {
             return;
