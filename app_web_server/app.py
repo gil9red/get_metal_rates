@@ -20,7 +20,7 @@ log.handlers.clear()
 
 formatter = logging.Formatter('[%(asctime)s] %(filename)s:%(lineno)d %(levelname)-8s %(message)s')
 
-file_handler = RotatingFileHandler(DIR_LOGS / 'web.log', maxBytes=10_000_000, backupCount=5, encoding='utf-8')
+file_handler = RotatingFileHandler(DIR_LOGS / 'log.txt', maxBytes=10_000_000, backupCount=5, encoding='utf-8')
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(formatter)
 
