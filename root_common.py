@@ -8,8 +8,6 @@ import sys
 
 from pathlib import Path
 
-from root_config import DIR_LOGS
-
 
 def get_logger(file_name: str, dir_name='logs'):
     dir_name = Path(dir_name).resolve()
@@ -35,6 +33,3 @@ def get_logger(file_name: str, dir_name='logs'):
     log.addHandler(ch)
 
     return log
-
-
-log = get_logger('main', DIR_LOGS)

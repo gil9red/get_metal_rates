@@ -8,8 +8,12 @@ import time
 
 import db
 
-from root_common import log
+from root_common import get_logger
 from app_parser.parser import get_metal_rates, get_pair_dates
+from app_parser.config import DIR_LOGS
+
+
+log = get_logger('main', DIR_LOGS)
 
 
 while True:
