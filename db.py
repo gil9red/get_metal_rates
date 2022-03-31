@@ -197,6 +197,16 @@ class MetalRate(BaseModel):
         )
 
     @classmethod
+    def get_prev_next_dates(cls, date: DT.date) -> tuple[DT.date, DT.date]:
+        prev_val = cls.select(cls.date).where(cls.date < date).limit(1).order_by(cls.date.desc()).first()
+        prev_date = prev_val.date if prev_val else None
+
+        next_val = cls.select(cls.date).where(cls.date > date).limit(1).order_by(cls.date.asc()).first()
+        next_date = next_val.date if next_val else None
+
+        return prev_date, next_date
+
+    @classmethod
     def get_last_date(cls) -> DT.date:
         return cls.get_last_dates(number=1)[0]
 
@@ -234,19 +244,43 @@ time.sleep(0.050)
 
 if __name__ == '__main__':
     BaseModel.print_count_of_tables()
-    # MetalRate: 5512
+    # MetalRate: 5516
     print()
 
     print('Last date:', MetalRate.get_last_date())
-    # Last date: 2022-03-25
+    # Last date: 2022-03-31
 
     start_date, end_date = MetalRate.get_range_dates()
     print(f'Range dates: {start_date} - {end_date}')
-    # Range dates: 2000-01-06 - 2022-03-25
+    # Range dates: 2000-01-06 - 2022-03-31
+
+    print()
+
+    print(f'Last metal rate (by date):\n    {MetalRate.get_by(end_date)}\n')
+    # Last metal rate (by date):
+    #     MetalRate(id=5516, date=2022-03-31, gold=5184.57, silver=66.92, platinum=2660.14, palladium=5839.34)
+
+    print(f'Last metal rate (by method):\n    {MetalRate.get_last()}\n')
+    # Last metal rate (by method):
+    #     MetalRate(id=5516, date=2022-03-31, gold=5184.57, silver=66.92, platinum=2660.14, palladium=5839.34)
+
+    print()
+
+    date = DT.date.fromisoformat('2022-03-24')
+    print(MetalRate.get_prev_next_dates(date))
+    # (datetime.date(2022, 3, 23), datetime.date(2022, 3, 25))
+
+    print(MetalRate.get_prev_next_dates(start_date))
+    # (None, datetime.date(2000, 1, 10))
+
+    print(MetalRate.get_prev_next_dates(end_date))
+    # (datetime.date(2022, 3, 30), None)
+
+    print()
 
     dates = MetalRate.get_last_dates(number=7)
     print('Last 7 dates:', [str(d) for d in dates])
-    # Last 7 dates: ['2022-03-25', '2022-03-24', '2022-03-23', '2022-03-22', '2022-03-19', '2022-03-18', '2022-03-17']
+    # Last 7 dates: ['2022-03-31', '2022-03-30', '2022-03-29', '2022-03-26', '2022-03-25', '2022-03-24', '2022-03-23']
 
     print()
 
@@ -259,21 +293,21 @@ if __name__ == '__main__':
             f'    Palladium: {metal_rate.palladium}\n'
         )
     """
-    2022-03-23:
-        Gold: 6455.72
-        Silver: 83.77
-        Platinum: 3446.44
-        Palladium: 8515.72
+    2022-03-29:
+        Gold: 5805.91
+        Silver: 75.04
+        Platinum: 2985.81
+        Palladium: 6800.17
     
-    2022-03-24:
-        Gold: 6408.41
-        Silver: 83.2
-        Platinum: 3396.33
-        Palladium: 8507.4
+    2022-03-30:
+        Gold: 5301.45
+        Silver: 68.35
+        Platinum: 2729.72
+        Palladium: 6216.76
     
-    2022-03-25:
-        Gold: 6008.83
-        Silver: 77.24
-        Platinum: 3162.05
-        Palladium: 7920.57
+    2022-03-31:
+        Gold: 5184.57
+        Silver: 66.92
+        Platinum: 2660.14
+        Palladium: 5839.34
     """
