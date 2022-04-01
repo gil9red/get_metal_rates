@@ -16,5 +16,3 @@ DB_DIR_NAME.mkdir(parents=True, exist_ok=True)
 
 # Путь к файлу базы данных
 DB_FILE_NAME: str = str(DB_DIR_NAME / 'database.sqlite')
-
-ITEMS_PER_PAGE: int = 10

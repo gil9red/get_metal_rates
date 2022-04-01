@@ -17,9 +17,12 @@ from peewee import (
 )
 from playhouse.sqliteq import SqliteQueueDatabase
 
-from root_config import DB_FILE_NAME, ITEMS_PER_PAGE
+from root_config import DB_FILE_NAME
 from app_parser.config import START_DATE
 from app_parser import parser
+
+
+ITEMS_PER_PAGE: int = 10
 
 
 # SOURCE: https://github.com/gil9red/SimplePyScripts/blob/cd5bf42742b2de4706a82aecb00e20ca0f043f8e/shorten.py
