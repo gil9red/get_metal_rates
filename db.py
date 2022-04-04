@@ -13,7 +13,8 @@ from typing import Type, Optional, Iterable
 
 # pip install peewee
 from peewee import (
-    Model, TextField, ForeignKeyField, CharField, DecimalField, DateField, Field
+    Model, TextField, ForeignKeyField, CharField, DecimalField, DateField, Field, IntegerField, BooleanField,
+    DateTimeField
 )
 from playhouse.sqliteq import SqliteQueueDatabase
 
@@ -222,12 +223,54 @@ class MetalRate(BaseModel):
         return list(query)
 
 
+class Subscription(BaseModel):
+    user_id = IntegerField(unique=True)
+    is_active = BooleanField(default=True)
+    was_sending = BooleanField(default=False)
+    creation_datetime = DateTimeField(default=DT.datetime.now)
+    modification_datetime = DateTimeField(default=DT.datetime.now)
+
+    @classmethod
+    def get_active_unsent_subscriptions(cls) -> list['Subscription']:
+        return cls.select().where(cls.was_sending == False, cls.is_active == True)
+
+    @classmethod
+    def has_is_active(cls, user_id: int) -> bool:
+        return bool(cls.get_or_none(cls.user_id == user_id, cls.is_active == True))
+
+    def set_active(self, active: bool):
+        self.is_active = active
+        if not active:
+            self.was_sending = False
+        self.modification_datetime = DT.datetime.now()
+        self.save()
+
+
+class Settings(BaseModel):
+    last_date_of_metals_rate = DateField(null=True)
+
+    @classmethod
+    def instance(cls) -> 'Settings':
+        obj = cls.get_first()
+        if not obj:
+            obj = cls.create()
+
+        return obj
+
+    @classmethod
+    def set_last_date_of_metals_rate(cls, value: DT.date):
+        obj = cls.instance()
+        obj.last_date_of_metals_rate = value
+        obj.save()
+
+
 db.connect()
 db.create_tables(BaseModel.get_inherited_models())
 
 # Задержка в 50мс, чтобы дать время на запуск SqliteQueueDatabase и создание таблиц
 # Т.к. в SqliteQueueDatabase запросы на чтение выполняются сразу, а на запись попадают в очередь
 time.sleep(0.050)
+
 
 if __name__ == '__main__':
     BaseModel.print_count_of_tables()
@@ -298,3 +341,7 @@ if __name__ == '__main__':
         Platinum: 2660.14
         Palladium: 5839.34
     """
+
+    obj = Settings.instance()
+    print(obj)
+    # Settings(id=1, last_date_of_metals_rate=None)
