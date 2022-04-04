@@ -4,12 +4,15 @@
 __author__ = 'ipetrash'
 
 
+import datetime as DT
 import logging
 import sys
 
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Union
+
+from root_config import DATE_FORMAT
 
 
 def get_logger(
@@ -35,3 +38,7 @@ def get_logger(
         log.addHandler(sh)
 
     return log
+
+
+def get_date_str(date: DT.date) -> str:
+    return date.strftime(DATE_FORMAT)

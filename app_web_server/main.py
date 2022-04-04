@@ -19,7 +19,7 @@ def index():
     items = []
     for metal_rate in MetalRate.get_last_rates(number=-1):
         items.append({
-            'date': metal_rate.date.strftime('%d/%m/%Y'),
+            'date': metal_rate.get_date_title(),
             'date_iso': metal_rate.date.isoformat(),
             'gold': float(metal_rate.gold),
             'silver': float(metal_rate.silver),

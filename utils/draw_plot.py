@@ -15,9 +15,8 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 from db import MetalRate
-
-
-DATE_FORMAT = '%d/%m/%Y'
+from root_config import DATE_FORMAT
+from root_common import get_date_str
 
 
 def draw_plot(
@@ -69,7 +68,7 @@ if __name__ == '__main__':
         days.append(metal_rate.date)
         values.append(metal_rate.gold)
 
-    title = f"Стоимость грамма золота в рублях за {days[0].strftime(DATE_FORMAT)} - {days[-1].strftime(DATE_FORMAT)}"
+    title = f"Стоимость грамма золота в рублях за {get_date_str(days[0])} - {get_date_str(days[-1])}"
 
     DIR = Path(__file__).resolve().parent
     path = DIR / 'plot_gold.png'

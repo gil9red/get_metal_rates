@@ -13,7 +13,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from app_parser.config import FILE_COOKIES, START_DATE
-
+from root_common import get_date_str
 
 decimal.getcontext().prec = 2
 
@@ -44,10 +44,6 @@ class MetalRate:
 
 def get_next_date(date: DT.date) -> DT.date:
     return (date + DT.timedelta(days=31)).replace(day=1)
-
-
-def get_date_str(date: DT.date) -> str:
-    return date.strftime('%d/%m/%Y')
 
 
 def get_pair_dates(start_date: DT.date, end_date: DT.date = None) -> list[tuple[DT.date, DT.date]]:

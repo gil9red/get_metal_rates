@@ -17,9 +17,10 @@ from peewee import (
 )
 from playhouse.sqliteq import SqliteQueueDatabase
 
-from root_config import DB_FILE_NAME
 from app_parser.config import START_DATE
 from app_parser import parser
+from root_config import DB_FILE_NAME
+from root_common import get_date_str
 
 
 ITEMS_PER_PAGE: int = 10
@@ -136,6 +137,9 @@ class MetalRate(BaseModel):
     silver = DecimalField(decimal_places=2, null=True)
     platinum = DecimalField(decimal_places=2, null=True)
     palladium = DecimalField(decimal_places=2, null=True)
+
+    def get_date_title(self) -> str:
+        return get_date_str(self.date)
 
     @classmethod
     def get_by(cls, date: DT.date) -> Optional['MetalRate']:
