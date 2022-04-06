@@ -263,6 +263,10 @@ class Settings(BaseModel):
         obj.last_date_of_metals_rate = value
         obj.save()
 
+    @classmethod
+    def get_last_date_of_metals_rate(cls) -> Optional[DT.date]:
+        return cls.instance().last_date_of_metals_rate
+
 
 db.connect()
 db.create_tables(BaseModel.get_inherited_models())
