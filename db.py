@@ -270,8 +270,6 @@ class Subscription(BaseModel):
 
     def set_active(self, active: bool):
         self.is_active = active
-        if not active:
-            self.was_sending = False
         self.modification_datetime = DT.datetime.now()
         self.save()
 
