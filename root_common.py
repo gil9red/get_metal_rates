@@ -5,6 +5,7 @@ __author__ = 'ipetrash'
 
 
 import datetime as DT
+import enum
 import logging
 import sys
 
@@ -42,3 +43,9 @@ def get_logger(
 
 def get_date_str(date: DT.date) -> str:
     return date.strftime(DATE_FORMAT)
+
+
+class SubscriptionResultEnum(enum.Enum):
+    SUBSCRIBE_OK = enum.auto()
+    UNSUBSCRIBE_OK = enum.auto()
+    ALREADY = enum.auto()

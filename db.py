@@ -21,8 +21,7 @@ from playhouse.sqliteq import SqliteQueueDatabase
 from app_parser.config import START_DATE
 from app_parser import parser
 from root_config import DB_FILE_NAME
-from root_common import get_date_str
-
+from root_common import get_date_str, SubscriptionResultEnum
 
 ITEMS_PER_PAGE: int = 10
 
@@ -229,6 +228,37 @@ class Subscription(BaseModel):
     was_sending = BooleanField(default=False)
     creation_datetime = DateTimeField(default=DT.datetime.now)
     modification_datetime = DateTimeField(default=DT.datetime.now)
+
+    @classmethod
+    def get_by_user_id(cls, user_id: int) -> Optional['Subscription']:
+        return cls.get_or_none(cls.user_id == user_id)
+
+    @classmethod
+    def subscribe(cls, user_id: int) -> SubscriptionResultEnum:
+        # Если подписка уже есть
+        if cls.has_is_active(user_id):
+            return SubscriptionResultEnum.ALREADY
+
+        obj = cls.get_by_user_id(user_id)
+        if obj:
+            obj.set_active(True)
+        else:
+            # По-умолчанию, подписки создаются активными
+            cls.create(user_id=user_id)
+
+        return SubscriptionResultEnum.SUBSCRIBE_OK
+
+    @classmethod
+    def unsubscribe(cls, user_id: int) -> SubscriptionResultEnum:
+        # Если подписка и так нет
+        if not cls.has_is_active(user_id):
+            return SubscriptionResultEnum.ALREADY
+
+        obj = cls.get_by_user_id(user_id)
+        if obj:
+            obj.set_active(False)
+
+        return SubscriptionResultEnum.UNSUBSCRIBE_OK
 
     @classmethod
     def get_active_unsent_subscriptions(cls) -> list['Subscription']:
