@@ -19,7 +19,9 @@ from peewee import SqliteDatabase
 
 from db import MetalRate, Settings, Subscription
 from root_common import SubscriptionResultEnum
-from utils.draw_plot import draw_plot
+from utils.draw_plot import (
+    draw_plot, get_plot_for_gold, get_plot_for_silver, get_plot_for_platinum, get_plot_for_palladium
+)
 
 
 DIR = Path(__file__).resolve().parent
@@ -154,6 +156,13 @@ class TestCasePlot(unittest.TestCase):
             self.assertTrue(path.exists())
             self.assertTrue(path.read_bytes())
             path.unlink()
+
+    def test_get_plot_for(self):
+        for draw_func in [get_plot_for_gold, get_plot_for_silver, get_plot_for_platinum, get_plot_for_palladium]:
+            for number in [7, 31, 180, -1]:
+                with self.subTest(msg=draw_func.__name__, number=number):
+                    photo = draw_func(number)
+                    assert photo.read()
 
 
 if __name__ == '__main__':
