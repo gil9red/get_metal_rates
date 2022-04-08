@@ -28,11 +28,17 @@ DIR = Path(__file__).resolve().parent
 # NOTE: https://docs.peewee-orm.com/en/latest/peewee/database.html#testing-peewee-applications
 class TestCaseDB(unittest.TestCase):
     def setUp(self):
-        models = [Subscription, Settings]
+        models = [MetalRate, Subscription, Settings]
         self.test_db = SqliteDatabase(':memory:')
         self.test_db.bind(models, bind_refs=False, bind_backrefs=False)
         self.test_db.connect()
         self.test_db.create_tables(models)
+
+    def test_metalrates(self):
+        self.assertEqual(MetalRate.get_last_dates(MetalRate.count()), MetalRate.get_last_dates(-1))
+        self.assertEqual(MetalRate.get_last_dates(-1), MetalRate.get_last_dates())
+        self.assertEqual(MetalRate.get_last_date(), MetalRate.get_last_dates(number=1)[0])
+        self.assertEqual(MetalRate.get_last_date(), MetalRate.get_last_dates()[-1])
 
     def test_settings(self):
         self.assertEqual(Settings.instance(), Settings.instance())
