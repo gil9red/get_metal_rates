@@ -207,7 +207,7 @@ class MetalRate(BaseModel):
         return cls.get_last_dates(number=1)[0]
 
     @classmethod
-    def get_last_dates(cls, number: int) -> list[DT.date]:
+    def get_last_dates(cls, number: int = -1) -> list[DT.date]:
         query = cls.select(cls.date).limit(number).order_by(cls.date.desc())
         items = [rate.date for rate in query]
         if not items:
@@ -215,7 +215,7 @@ class MetalRate(BaseModel):
         return items
 
     @classmethod
-    def get_last_rates(cls, number: int, ignore_null: bool = True) -> list['MetalRate']:
+    def get_last_rates(cls, number: int = -1, ignore_null: bool = True) -> list['MetalRate']:
         dates = cls.get_last_dates(number)
         filters = [cls.date.in_(dates)]
         if ignore_null:
