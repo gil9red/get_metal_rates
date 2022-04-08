@@ -145,6 +145,15 @@ class MetalRate(BaseModel):
     def get_by(cls, date: DT.date) -> Optional['MetalRate']:
         return cls.get_or_none(date=date)
 
+    def get_description(self) -> str:
+        return (
+            f'{self.date}:\n'
+            f'    Золото: {self.gold}\n'
+            f'    Серебро: {self.silver}\n'
+            f'    Платина: {self.platinum}\n'
+            f'    Палладий: {self.palladium}'
+        )
+
     @classmethod
     def add(
             cls,
@@ -347,31 +356,26 @@ if __name__ == '__main__':
     print()
 
     for metal_rate in MetalRate.get_last_rates(number=3):
-        print(
-            f'{metal_rate.date}:\n'
-            f'    Gold: {metal_rate.gold}\n'
-            f'    Silver: {metal_rate.silver}\n'
-            f'    Platinum: {metal_rate.platinum}\n'
-            f'    Palladium: {metal_rate.palladium}\n'
-        )
+        print(metal_rate.get_description())
+        print()
     """
     2022-03-29:
-        Gold: 5805.91
-        Silver: 75.04
-        Platinum: 2985.81
-        Palladium: 6800.17
+        Золото: 5805.91
+        Серебро: 75.04
+        Платина: 2985.81
+        Палладий: 6800.17
     
     2022-03-30:
-        Gold: 5301.45
-        Silver: 68.35
-        Platinum: 2729.72
-        Palladium: 6216.76
+        Золото: 5301.45
+        Серебро: 68.35
+        Платина: 2729.72
+        Палладий: 6216.76
     
     2022-03-31:
-        Gold: 5184.57
-        Silver: 66.92
-        Platinum: 2660.14
-        Palladium: 5839.34
+        Золото: 5184.57
+        Серебро: 66.92
+        Платина: 2660.14
+        Палладий: 5839.34
     """
 
     obj = Settings.instance()
