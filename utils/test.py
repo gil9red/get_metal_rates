@@ -163,7 +163,14 @@ class TestCasePlot(unittest.TestCase):
             self.assertTrue(path.read_bytes())
             path.unlink()
 
-    def test_get_plot_for(self):
+    def test_get_plot_for_metal(self):
+        for metal in MetalEnum:
+            for number in [7, 31, 180, -1]:
+                with self.subTest(msg=metal.name_lower, number=number):
+                    photo = get_plot_for_metal(metal=metal, number=number)
+                    assert photo.read()
+
+    def test_get_plot_for_xxx(self):
         for draw_func in [get_plot_for_gold, get_plot_for_silver, get_plot_for_platinum, get_plot_for_palladium]:
             for number in [7, 31, 180, -1]:
                 with self.subTest(msg=draw_func.__name__, number=number):
