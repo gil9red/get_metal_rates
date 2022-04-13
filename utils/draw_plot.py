@@ -109,9 +109,9 @@ def get_plot_for_palladium(number: int = -1) -> BytesIO:
 if __name__ == '__main__':
     DIR = Path(__file__).resolve().parent
 
-    for draw_func in [get_plot_for_gold, get_plot_for_silver, get_plot_for_platinum, get_plot_for_palladium]:
-        photo = draw_func()
-        path = DIR / f'{draw_func.__name__}.png'
+    for metal in MetalEnum:
+        photo = get_plot_for_metal(metal)
+        path = DIR / f'get_plot_for_{metal.name}.png'
         path.write_bytes(photo.read())
 
     days = []
