@@ -62,3 +62,6 @@ class MetalEnum(enum.Enum):
         self.singular = singular
         self.plural = plural
         self.color = color
+
+
+DEFAULT_METAL = MetalEnum.GOLD
