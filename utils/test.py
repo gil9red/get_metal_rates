@@ -17,10 +17,11 @@ import matplotlib.dates as mdates
 
 from peewee import SqliteDatabase
 
-from db import MetalRate, Settings, Subscription
-from root_common import SubscriptionResultEnum
+from db import MetalRate, Settings, Subscription, db
+from root_common import SubscriptionResultEnum, MetalEnum
 from utils.draw_plot import (
-    draw_plot, get_plot_for_gold, get_plot_for_silver, get_plot_for_platinum, get_plot_for_palladium
+    draw_plot, get_plot_for_metal,
+    get_plot_for_gold, get_plot_for_silver, get_plot_for_platinum, get_plot_for_palladium
 )
 
 
@@ -30,13 +31,18 @@ DIR = Path(__file__).resolve().parent
 # NOTE: https://docs.peewee-orm.com/en/latest/peewee/database.html#testing-peewee-applications
 class TestCaseDB(unittest.TestCase):
     def setUp(self):
-        models = [MetalRate, Subscription, Settings]
+        self.models = [MetalRate, Subscription, Settings]
         self.test_db = SqliteDatabase(':memory:')
-        self.test_db.bind(models, bind_refs=False, bind_backrefs=False)
+        self.test_db.bind(self.models, bind_refs=False, bind_backrefs=False)
         self.test_db.connect()
-        self.test_db.create_tables(models)
+        self.test_db.create_tables(self.models)
 
-    def test_metalrates(self):
+    def tearDown(self):
+        # Нужно вернуть маппинг к текущей базе данных, иначе следующие тесты, использующие базу данных, типа
+        # рисования графиков будут проваливаться
+        db.bind(self.models, bind_refs=False, bind_backrefs=False)
+
+    def test_metalrate(self):
         self.assertEqual(MetalRate.get_last_dates(MetalRate.count()), MetalRate.get_last_dates(-1))
         self.assertEqual(MetalRate.get_last_dates(-1), MetalRate.get_last_dates())
         self.assertEqual(MetalRate.get_last_date(), MetalRate.get_last_dates(number=1)[0])
