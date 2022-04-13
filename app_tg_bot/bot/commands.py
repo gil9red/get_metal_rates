@@ -102,7 +102,6 @@ def on_get_last_7_as_chart(update: Update, context: CallbackContext):
 
 @log_func(log)
 def on_get_last_31_as_chart(update: Update, context: CallbackContext):
-    # По-умолчанию, используется золото
     reply_or_edit_plot_with_keyboard(
         metal=DEFAULT_METAL,
         number=31,
@@ -113,7 +112,6 @@ def on_get_last_31_as_chart(update: Update, context: CallbackContext):
 
 @log_func(log)
 def on_get_all_as_chart(update: Update, context: CallbackContext):
-    # По-умолчанию, используется золото
     reply_or_edit_plot_with_keyboard(
         metal=DEFAULT_METAL,
         number=-1,
