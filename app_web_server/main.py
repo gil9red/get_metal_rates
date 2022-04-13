@@ -12,6 +12,7 @@ from flask import render_template, send_from_directory
 
 import config
 from db import MetalRate
+from root_common import MetalEnum
 
 
 @app.route("/")
@@ -36,6 +37,12 @@ def index():
         items=items,
         start_date=str(start_date), end_date=str(end_date),
         filter_date=str(filter_date),
+        metals={
+            metal.name_lower: {
+                k: v for k, v in vars(metal).items() if not k.startswith('_')
+            }
+            for metal in MetalEnum
+        },
     )
 
 

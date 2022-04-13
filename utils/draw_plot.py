@@ -17,7 +17,7 @@ import matplotlib.dates as mdates
 
 from db import MetalRate
 from root_config import DATE_FORMAT
-from root_common import get_date_str
+from root_common import get_date_str, MetalEnum
 
 
 def draw_plot(
@@ -63,9 +63,7 @@ def draw_plot(
 
 
 def get_plot_for_metal(
-    metal_name: str,
-    attr_name: str,
-    color: str,
+    metal: MetalEnum,
     number: int = -1,
     title_format: str = "Стоимость грамма {metal_name} в рублях за {start_date} - {end_date}",
 ) -> BytesIO:
@@ -73,10 +71,10 @@ def get_plot_for_metal(
     values = []
     for metal_rate in MetalRate.get_last_rates(number=number):
         days.append(metal_rate.date)
-        values.append(getattr(metal_rate, attr_name))
+        values.append(getattr(metal_rate, metal.name_lower))
 
     title = title_format.format(
-        metal_name=metal_name,
+        metal_name=metal.plural,
         start_date=get_date_str(days[0]),
         end_date=get_date_str(days[-1])
     )
@@ -87,45 +85,25 @@ def get_plot_for_metal(
         days=days,
         values=values,
         title=title,
-        color=color,
+        color=metal.color,
     )
     return bytes_io
 
 
 def get_plot_for_gold(number: int = -1) -> BytesIO:
-    return get_plot_for_metal(
-        metal_name='золота',
-        attr_name='gold',
-        number=number,
-        color="#FFA500",
-    )
+    return get_plot_for_metal(MetalEnum.GOLD, number=number)
 
 
 def get_plot_for_silver(number: int = -1) -> BytesIO:
-    return get_plot_for_metal(
-        metal_name='серебра',
-        attr_name='silver',
-        number=number,
-        color="#898989",
-    )
+    return get_plot_for_metal(MetalEnum.SILVER, number=number)
 
 
 def get_plot_for_platinum(number: int = -1) -> BytesIO:
-    return get_plot_for_metal(
-        metal_name='платины',
-        attr_name='platinum',
-        number=number,
-        color="#86B066",
-    )
+    return get_plot_for_metal(MetalEnum.PLATINUM, number=number)
 
 
 def get_plot_for_palladium(number: int = -1) -> BytesIO:
-    return get_plot_for_metal(
-        metal_name='палладия',
-        attr_name='palladium',
-        number=number,
-        color="#617DB4",
-    )
+    return get_plot_for_metal(MetalEnum.PALLADIUM, number=number)
 
 
 if __name__ == '__main__':

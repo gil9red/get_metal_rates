@@ -6,6 +6,14 @@ const SELECTOR_SELECT_METAL = "#select_metal";
 const SELECTOR_USE_FOR_UPDATES_CHART = '.use_for_updates_chart';
 
 
+function date_render(data, type, row, meta) {
+    if (type === 'display' || type === 'filter') {
+        return row.date;
+    }
+
+    return row.date_iso;
+}
+
 function fill_table() {
     return $(SELECTOR_METAL_RATES).DataTable({
         data: window.items,
@@ -72,24 +80,13 @@ function fill_chart(chart_data) {
     });
 }
 
-function get_metal_color(metal) {
-    // SOURCE: Цвет взят из http://mfd.ru/centrobank/preciousmetals
-    switch (metal) {
-        case "gold":
-            return "rgb(255, 102, 10)";
-
-        case "silver":
-            return "rgb(137, 137, 137)";
-
-        case "platinum":
-            return "rgb(134, 176, 102)";
-
-        case "palladium":
-            return "rgb(97, 125, 180)";
-
-        default:
-            throw new Error('Неизвестный металл ' + metal);
+function get_metal_color(metal_name) {
+    let metal = window.metals[metal_name];
+    if (metal) {
+        return metal.color;
     }
+
+    throw new Error('Неизвестный металл ' + metal_name);
 }
 
 function get_chart_data() {
@@ -150,11 +147,3 @@ $(document).ready(function() {
         update_chart();
     });
 });
-
-function date_render(data, type, row, meta) {
-    if (type === 'display' || type === 'filter') {
-        return row.date;
-    }
-
-    return row.date_iso;
-}

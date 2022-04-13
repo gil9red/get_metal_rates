@@ -49,3 +49,16 @@ class SubscriptionResultEnum(enum.Enum):
     SUBSCRIBE_OK = enum.auto()
     UNSUBSCRIBE_OK = enum.auto()
     ALREADY = enum.auto()
+
+
+class MetalEnum(enum.Enum):
+    GOLD = ('золото', 'золота', '#FFA500')
+    SILVER = ('серебро', 'серебра', '#898989')
+    PLATINUM = ('платина', 'платины', '#86B066')
+    PALLADIUM = ('палладий', 'палладия', '#617DB4')
+
+    def __init__(self, singular: str, plural: str, color: str):
+        self.name_lower = self.name.lower()
+        self.singular = singular
+        self.plural = plural
+        self.color = color
