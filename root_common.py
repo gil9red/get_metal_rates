@@ -24,6 +24,11 @@ def get_logger(
         log_file=True
 ) -> 'logging.Logger':
     log = logging.getLogger(name)
+
+    # Возвращаем уже существующий логгер
+    if log.handlers:
+        return log
+
     log.setLevel(logging.DEBUG)
 
     formatter = logging.Formatter('[%(asctime)s] %(filename)s:%(lineno)d %(levelname)-8s %(message)s')

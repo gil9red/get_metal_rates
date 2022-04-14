@@ -46,7 +46,7 @@ def get_inline_keyboard_for_date_pagination(for_date: DT.date) -> InlineKeyboard
     prev_date_str = f'❮ {get_date_str(prev_date)}' if prev_date else ''
     prev_date_callback_data = fill_string_pattern(PATTERN_INLINE_GET_BY_DATE, prev_date if prev_date else '')
 
-    next_date_str = f'❮ {get_date_str(next_date)}' if next_date else ''
+    next_date_str = f'{get_date_str(next_date)} ❯' if next_date else ''
     next_date_callback_data = fill_string_pattern(PATTERN_INLINE_GET_BY_DATE, next_date if next_date else '')
 
     return InlineKeyboardMarkup.from_row([

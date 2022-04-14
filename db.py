@@ -147,7 +147,7 @@ class MetalRate(BaseModel):
 
     def get_description(self) -> str:
         return (
-            f'{self.date}:\n'
+            f'{get_date_str(self.date)}:\n'
             f'    Золото: {self.gold}\n'
             f'    Серебро: {self.silver}\n'
             f'    Платина: {self.platinum}\n'

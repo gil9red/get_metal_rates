@@ -4,3 +4,4 @@ peewee==3.14.10
 python-telegram-bot==13.11
 python-telegram-bot-pagination==0.0.2
 requests==2.27.1
+matplotlib==3.5.1

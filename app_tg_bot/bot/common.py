@@ -12,7 +12,7 @@ import logging
 from typing import Union, Optional
 
 from telegram import (
-    Update, ReplyMarkup, Bot, Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
+    Update, ReplyMarkup, Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 )
 from telegram.error import NetworkError, BadRequest
 from telegram.ext import CallbackContext
@@ -24,9 +24,6 @@ from app_tg_bot.bot.third_party.regexp import fill_string_pattern
 from app_tg_bot.config import DIR_LOGS, MAX_MESSAGE_LENGTH, ERROR_TEXT
 from root_common import get_logger, MetalEnum
 from utils import draw_plot
-
-
-BOT: Bot = None
 
 
 # SOURCE: https://github.com/gil9red/telegram__random_bashim_bot/blob/e9d705a52223597c6965ef82f0b0d55fa11722c2/bot/parsers.py#L37
@@ -176,6 +173,8 @@ def reply_or_edit_plot_with_keyboard(
 ):
     message = update.effective_message
     query = update.callback_query
+    if query:
+        query.answer()
 
     photo = draw_plot.get_plot_for_metal(metal=metal, number=number)
     reply_markup = get_inline_keyboard_for_metal_switch_in_chart(
@@ -185,8 +184,6 @@ def reply_or_edit_plot_with_keyboard(
 
     # Для запросов CallbackQuery нужно менять текущее сообщение
     if query:
-        query.answer()
-
         # Fix error: "telegram.error.BadRequest: Message is not modified"
         if is_equal_inline_keyboards(reply_markup, query.message.reply_markup):
             return
