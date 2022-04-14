@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import BinaryIO, Union
 
 # pip install matplotlib
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from matplotlib.figure import Figure
 
 from db import MetalRate
 from root_config import DATE_FORMAT
@@ -29,37 +29,32 @@ def draw_plot(
         color: str = 'orange',
         date_format: str = DATE_FORMAT,
         axis_off: bool = False,
-        show: bool = False
 ):
     if not locator:
         locator = mdates.AutoDateLocator()
 
-    f = plt.figure()
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter(date_format))
-    plt.gca().xaxis.set_major_locator(locator)
+    fig = Figure()
+    ax = fig.subplots()
+    ax.xaxis.set_major_formatter(mdates.DateFormatter(date_format))
+    ax.xaxis.set_major_locator(locator)
 
-    lines = plt.plot(days, values)[0]
+    lines = ax.plot(days, values)[0]
     lines.set_color(color)
 
     if title:
-        plt.xlabel(title)
+        ax.set_xlabel(title)
 
-    plt.gcf().autofmt_xdate()
+    fig.autofmt_xdate()
 
     if axis_off:
-        plt.gca().set_xticks([])
-        plt.gca().set_yticks([])
+        ax.set_xticks([])
+        ax.set_yticks([])
 
-    plt.savefig(out)
+    fig.savefig(out, format='png')
 
     # После записи в файловый объект нужно внутренний указатель переместить в начало, иначе read не будет работать
     if hasattr(out, 'seek'):  # Для BinaryIO и ему подобных
         out.seek(0)
-
-    if show:
-        plt.show()
-
-    plt.close(f)
 
 
 def get_plot_for_metal(
@@ -127,5 +122,4 @@ if __name__ == '__main__':
         out=path,
         days=days, values=values,
         title=title,
-        show=True
     )
