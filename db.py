@@ -234,7 +234,7 @@ class MetalRate(BaseModel):
 class Subscription(BaseModel):
     user_id = IntegerField(unique=True)
     is_active = BooleanField(default=True)
-    was_sending = BooleanField(default=False)
+    was_sending = BooleanField(default=True)
     creation_datetime = DateTimeField(default=DT.datetime.now)
     modification_datetime = DateTimeField(default=DT.datetime.now)
 
@@ -279,6 +279,8 @@ class Subscription(BaseModel):
 
     def set_active(self, active: bool):
         self.is_active = active
+        if active:  # Чтобы сразу после подписки бот не отправил рассылку
+            self.was_sending = True
         self.modification_datetime = DT.datetime.now()
         self.save()
 
