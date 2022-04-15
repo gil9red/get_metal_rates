@@ -20,9 +20,14 @@ from app_tg_bot.bot.regexp_patterns import (
     PATTERN_REPLY_GET_LAST_31_AS_CHART, PATTERN_REPLY_GET_ALL_AS_CHART, PATTERN_REPLY_SUBSCRIBE,
     PATTERN_REPLY_UNSUBSCRIBE, PATTERN_INLINE_GET_AS_CHART, fill_string_pattern
 )
+from app_tg_bot.bot.third_party.auto_in_progress_message import show_temp_message_decorator, ProgressValue
 
 from db import Subscription, MetalRate
 from root_common import get_date_str, MetalEnum, SubscriptionResultEnum, DEFAULT_METAL
+
+
+TEXT_SHOW_TEMP_MESSAGE = SeverityEnum.INFO.get_text('Пожалуйста, подождите {value}')
+PROGRESS_VALUE = ProgressValue.RECTS_SMALL
 
 
 def get_reply_keyboard(update: Update, context: CallbackContext) -> ReplyKeyboardMarkup:
@@ -91,6 +96,10 @@ def on_get_as_text(update: Update, context: CallbackContext):
 
 
 @log_func(log)
+@show_temp_message_decorator(
+    text=TEXT_SHOW_TEMP_MESSAGE,
+    progress_value=PROGRESS_VALUE,
+)
 def on_get_last_7_as_chart(update: Update, context: CallbackContext):
     reply_or_edit_plot_with_keyboard(
         metal=DEFAULT_METAL,
@@ -101,6 +110,10 @@ def on_get_last_7_as_chart(update: Update, context: CallbackContext):
 
 
 @log_func(log)
+@show_temp_message_decorator(
+    text=TEXT_SHOW_TEMP_MESSAGE,
+    progress_value=PROGRESS_VALUE,
+)
 def on_get_last_31_as_chart(update: Update, context: CallbackContext):
     reply_or_edit_plot_with_keyboard(
         metal=DEFAULT_METAL,
@@ -111,6 +124,10 @@ def on_get_last_31_as_chart(update: Update, context: CallbackContext):
 
 
 @log_func(log)
+@show_temp_message_decorator(
+    text=TEXT_SHOW_TEMP_MESSAGE,
+    progress_value=PROGRESS_VALUE,
+)
 def on_get_all_as_chart(update: Update, context: CallbackContext):
     reply_or_edit_plot_with_keyboard(
         metal=DEFAULT_METAL,
@@ -121,6 +138,10 @@ def on_get_all_as_chart(update: Update, context: CallbackContext):
 
 
 @log_func(log)
+@show_temp_message_decorator(
+    text=TEXT_SHOW_TEMP_MESSAGE,
+    progress_value=PROGRESS_VALUE,
+)
 def on_callback_get_as_chart(update: Update, context: CallbackContext):
     number_str, metal_name = context.match.groups()
     number = int(number_str)
