@@ -155,7 +155,7 @@ class MetalRate(BaseModel):
             abs_diff = abs(diff)
 
             # Если разница целочисленная, то оставляем целым числом
-            if abs_diff == int(abs_diff):
+            if abs_diff.is_integer():
                 abs_diff = int(abs_diff)
             else:
                 # Иначе вещественным, но с точностью в 2 знака
