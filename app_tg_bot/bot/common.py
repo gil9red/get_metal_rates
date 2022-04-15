@@ -223,7 +223,7 @@ def get_inline_keyboard_for_metal_switch_in_chart(
 
         buttons.append(
             InlineKeyboardButton(
-                text=f'·{metal_title}·' if current_metal == metal else metal_title,
+                text=f'· {metal_title} ·' if current_metal == metal else metal_title,
                 callback_data=fill_string_pattern(pattern, number, metal_name)
             )
         )
