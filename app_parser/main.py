@@ -24,6 +24,7 @@ while True:
 
         metal_rate_count = db.MetalRate.count()
 
+        i = 0
         for date_req1, date_req2 in get_pair_dates(start_date):
             log.info(f'Поиск за {date_req1} - {date_req2}')
 
@@ -47,7 +48,10 @@ while True:
 
                 break
 
-            time.sleep(60)
+            if i > 0:
+                time.sleep(60)
+
+            i += 1
 
         diff_count = db.MetalRate.count() - metal_rate_count
         log.info(f'Добавлено записей: {diff_count}' if diff_count else 'Новый записей нет')
