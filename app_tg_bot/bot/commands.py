@@ -85,7 +85,7 @@ def on_get_as_text(update: Update, context: CallbackContext):
         metal_rate: MetalRate = MetalRate.get_last()
         for_date: DT.date = metal_rate.date
 
-    text = metal_rate.get_description()
+    text = metal_rate.get_description(show_diff=True)
 
     reply_text_or_edit_with_keyboard(
         message=update.effective_message,

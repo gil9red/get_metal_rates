@@ -56,7 +56,7 @@ def sending_notifications(log: logging.Logger):
             if not bot:
                 continue
 
-            text = f'<b>Рассылка</b>\n{MetalRate.get_last().get_description()}'
+            text = f'<b>Рассылка</b>\n{MetalRate.get_last().get_description(show_diff=True)}'
 
             for subscription in Subscription.get_active_unsent_subscriptions():
                 bot.send_message(

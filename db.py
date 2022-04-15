@@ -23,6 +23,7 @@ from app_parser import parser
 from root_config import DB_FILE_NAME
 from root_common import get_date_str, SubscriptionResultEnum
 
+
 ITEMS_PER_PAGE: int = 10
 
 
@@ -145,13 +146,39 @@ class MetalRate(BaseModel):
     def get_by(cls, date: DT.date) -> Optional['MetalRate']:
         return cls.get_or_none(date=date)
 
-    def get_description(self) -> str:
+    def get_description(self, show_diff: bool = False) -> str:
+        def get_diff_str(prev_amt: DecimalField, next_amt: DecimalField) -> str:
+            prev_amt = float(prev_amt)
+            next_amt = float(next_amt)
+
+            diff = next_amt - prev_amt
+            abs_diff = abs(diff)
+
+            # Если разница целочисленная, то оставляем целым числом
+            if abs_diff == int(abs_diff):
+                abs_diff = int(abs_diff)
+            else:
+                # Иначе вещественным, но с точностью в 2 знака
+                abs_diff = f'{abs_diff:.2f}'
+
+            sign = "-" if diff < 0 else "+"
+            return f'{sign}{abs_diff}'
+
+        prev_date, _ = self.get_prev_next_dates(self.date)
+        text_diff_gold = text_diff_silver = text_diff_platinum = text_diff_palladium = ''
+        if prev_date and show_diff:
+            prev_metal = self.get_by(prev_date)
+            text_diff_gold = f' ({get_diff_str(prev_metal.gold, self.gold)})'
+            text_diff_silver = f' ({get_diff_str(prev_metal.silver, self.silver)})'
+            text_diff_platinum = f' ({get_diff_str(prev_metal.platinum, self.platinum)})'
+            text_diff_palladium = f' ({get_diff_str(prev_metal.palladium, self.palladium)})'
+
         return (
             f'{get_date_str(self.date)}:\n'
-            f'    Золото: {self.gold}\n'
-            f'    Серебро: {self.silver}\n'
-            f'    Платина: {self.platinum}\n'
-            f'    Палладий: {self.palladium}'
+            f'    Золото: {self.gold}{text_diff_gold}\n'
+            f'    Серебро: {self.silver}{text_diff_silver}\n'
+            f'    Платина: {self.platinum}{text_diff_platinum}\n'
+            f'    Палладий: {self.palladium}{text_diff_palladium}'
         )
 
     @classmethod
