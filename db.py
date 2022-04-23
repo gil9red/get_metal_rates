@@ -172,10 +172,10 @@ class MetalRate(BaseModel):
 
         return (
             f'{get_date_str(self.date)}:\n'
-            f'    Золото: {self.gold}{text_diff_gold}\n'
-            f'    Серебро: {self.silver}{text_diff_silver}\n'
-            f'    Платина: {self.platinum}{text_diff_platinum}\n'
-            f'    Палладий: {self.palladium}{text_diff_palladium}'
+            f'    Золото: {self.gold:.2f}{text_diff_gold}\n'
+            f'    Серебро: {self.silver:.2f}{text_diff_silver}\n'
+            f'    Платина: {self.platinum:.2f}{text_diff_platinum}\n'
+            f'    Палладий: {self.palladium:.2f}{text_diff_palladium}'
         )
 
     @classmethod
