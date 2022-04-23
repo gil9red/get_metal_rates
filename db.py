@@ -134,10 +134,10 @@ class BaseModel(Model):
 
 class MetalRate(BaseModel):
     date = DateField(unique=True)
-    gold = DecimalField(decimal_places=2, null=True)
-    silver = DecimalField(decimal_places=2, null=True)
-    platinum = DecimalField(decimal_places=2, null=True)
-    palladium = DecimalField(decimal_places=2, null=True)
+    gold = DecimalField(decimal_places=2, auto_round=True, null=True)
+    silver = DecimalField(decimal_places=2, auto_round=True, null=True)
+    platinum = DecimalField(decimal_places=2, auto_round=True, null=True)
+    palladium = DecimalField(decimal_places=2, auto_round=True, null=True)
 
     def get_date_title(self) -> str:
         return get_date_str(self.date)
@@ -148,14 +148,11 @@ class MetalRate(BaseModel):
 
     def get_description(self, show_diff: bool = False) -> str:
         def get_diff_str(prev_amt: DecimalField, next_amt: DecimalField) -> str:
-            prev_amt = float(prev_amt)
-            next_amt = float(next_amt)
-
             diff = next_amt - prev_amt
             abs_diff = abs(diff)
 
             # Если разница целочисленная, то оставляем целым числом
-            if abs_diff.is_integer():
+            if abs_diff % 1 == 0:
                 abs_diff = int(abs_diff)
             else:
                 # Иначе вещественным, но с точностью в 2 знака
