@@ -56,9 +56,12 @@ def sending_notifications(log: logging.Logger):
             if not bot:
                 continue
 
-            text = f'<b>Рассылка</b>\n{MetalRate.get_last().get_description(show_diff=True)}'
+            subscriptions = Subscription.get_active_unsent_subscriptions()
+            if not subscriptions:
+                continue
 
-            for subscription in Subscription.get_active_unsent_subscriptions():
+            text = f'<b>Рассылка</b>\n{MetalRate.get_last().get_description(show_diff=True)}'
+            for subscription in subscriptions:
                 bot.send_message(
                     chat_id=subscription.user_id,  # Для приватных чатов chat_id равен user_id
                     text=text,
