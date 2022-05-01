@@ -5,12 +5,14 @@ __author__ = 'ipetrash'
 
 
 import re
-
 from app_tg_bot.bot.third_party.regexp import fill_string_pattern
 
 
 PATTERN_REPLY_GET_AS_TEXT = re.compile(r'^Последняя запись$', flags=re.IGNORECASE)
 PATTERN_INLINE_GET_BY_DATE = re.compile(r'^get_by_date=(.+)$')
+
+PATTERN_REPLY_SELECT_DATE = re.compile(r'^Выбрать дату', flags=re.IGNORECASE)
+PATTERN_INLINE_SELECT_DATE = re.compile(r'.+;\d+;\d+;\d+')  # NOTE: Формат telegramcalendar.py
 
 PATTERN_REPLY_GET_LAST_7_AS_CHART = re.compile(r'^График за 7$', flags=re.IGNORECASE)
 PATTERN_REPLY_GET_LAST_31_AS_CHART = re.compile(r'^График за 31$', flags=re.IGNORECASE)

@@ -18,9 +18,12 @@ from app_tg_bot.bot.common import (
 from app_tg_bot.bot.regexp_patterns import (
     PATTERN_REPLY_GET_AS_TEXT, PATTERN_INLINE_GET_BY_DATE, PATTERN_REPLY_GET_LAST_7_AS_CHART,
     PATTERN_REPLY_GET_LAST_31_AS_CHART, PATTERN_REPLY_GET_ALL_AS_CHART, PATTERN_REPLY_SUBSCRIBE,
-    PATTERN_REPLY_UNSUBSCRIBE, PATTERN_INLINE_GET_AS_CHART, fill_string_pattern
+    PATTERN_REPLY_UNSUBSCRIBE, PATTERN_INLINE_GET_AS_CHART,
+    PATTERN_REPLY_SELECT_DATE, PATTERN_INLINE_SELECT_DATE,
+    fill_string_pattern
 )
 from app_tg_bot.bot.third_party.auto_in_progress_message import show_temp_message_decorator, ProgressValue
+from app_tg_bot.bot.third_party import telegramcalendar
 
 from db import Subscription, MetalRate
 from root_common import get_date_str, MetalEnum, SubscriptionResultEnum, DEFAULT_METAL
@@ -34,7 +37,10 @@ def get_reply_keyboard(update: Update, context: CallbackContext) -> ReplyKeyboar
     is_active = Subscription.has_is_active(update.effective_user.id)
 
     commands = [
-        [fill_string_pattern(PATTERN_REPLY_GET_AS_TEXT)],
+        [
+            fill_string_pattern(PATTERN_REPLY_GET_AS_TEXT),
+            fill_string_pattern(PATTERN_REPLY_SELECT_DATE),
+        ],
         [
             fill_string_pattern(PATTERN_REPLY_GET_LAST_7_AS_CHART),
             fill_string_pattern(PATTERN_REPLY_GET_LAST_31_AS_CHART)
@@ -93,6 +99,50 @@ def on_get_as_text(update: Update, context: CallbackContext):
         text=text,
         reply_markup=get_inline_keyboard_for_date_pagination(for_date),
     )
+
+
+@log_func(log)
+def on_select_date(update: Update, context: CallbackContext):
+    query = update.callback_query
+    if not query:
+        date = MetalRate.get_last_date()
+        reply_message(
+            "Пожалуйста, выберите дату:",
+            update=update, context=context,
+            reply_markup=telegramcalendar.create_calendar(
+                year=date.year,
+                month=date.month
+            )
+        )
+        return
+
+    query.answer()
+
+    bot = context.bot
+
+    selected, for_date = telegramcalendar.process_calendar_selection(bot, update)
+    if selected:
+        msg_not_found_for_date = ''
+
+        metal_rate: MetalRate = MetalRate.get_by(for_date)
+        if not metal_rate:
+            msg_not_found_for_date = SeverityEnum.INFO.get_text(
+                f'За {get_date_str(for_date)} нет данных, будет выбрана ближайшая дата'
+            )
+            prev_date, next_date = MetalRate.get_prev_next_dates(for_date)
+            for_date = next_date if next_date else prev_date
+            metal_rate: MetalRate = MetalRate.get_by(for_date)
+
+        text = metal_rate.get_description(show_diff=True)
+        if msg_not_found_for_date:
+            text = msg_not_found_for_date + '\n\n' + text
+
+        reply_text_or_edit_with_keyboard(
+            message=update.effective_message,
+            query=query,
+            text=text,
+            reply_markup=get_inline_keyboard_for_date_pagination(for_date),
+        )
 
 
 @log_func(log)
@@ -222,6 +272,9 @@ def setup(dp: Dispatcher):
 
     dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_GET_AS_TEXT), on_get_as_text))
     dp.add_handler(CallbackQueryHandler(on_get_as_text, pattern=PATTERN_INLINE_GET_BY_DATE))
+
+    dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_SELECT_DATE), on_select_date))
+    dp.add_handler(CallbackQueryHandler(on_select_date, pattern=PATTERN_INLINE_SELECT_DATE))
 
     dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_GET_LAST_7_AS_CHART), on_get_last_7_as_chart))
     dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_GET_LAST_31_AS_CHART), on_get_last_31_as_chart))
