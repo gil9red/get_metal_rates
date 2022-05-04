@@ -33,11 +33,6 @@ while True:
                     rates = get_metal_rates(date_req1, date_req2)
 
                     log.info(f'Найдено {len(rates)} записей из API')
-                    if not rates:
-                        log.info('Ничего не вернулось, похоже на ошибку сервиса. Нужно повторить')
-                        time.sleep(60)
-                        continue
-
                     for metal_rate in rates:
                         db.MetalRate.add_from(metal_rate)
 
@@ -63,4 +58,4 @@ while True:
 
     log.info("Завершено.\n")
 
-    time.sleep(3600 * 8)
+    time.sleep(3600)  # Every 1 hour
