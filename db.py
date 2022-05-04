@@ -134,10 +134,10 @@ class BaseModel(Model):
 
 class MetalRate(BaseModel):
     date = DateField(unique=True)
-    gold = DecimalField(decimal_places=2, auto_round=True, null=True)
-    silver = DecimalField(decimal_places=2, auto_round=True, null=True)
-    platinum = DecimalField(decimal_places=2, auto_round=True, null=True)
-    palladium = DecimalField(decimal_places=2, auto_round=True, null=True)
+    gold = DecimalField(null=True)
+    silver = DecimalField(null=True)
+    platinum = DecimalField(null=True)
+    palladium = DecimalField(null=True)
 
     def get_date_title(self) -> str:
         return get_date_str(self.date)
