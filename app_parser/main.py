@@ -10,7 +10,7 @@ import db
 
 from root_common import get_logger
 from app_parser.parser import get_metal_rates, get_pair_dates
-from app_parser.config import DIR_LOGS
+from app_parser.config import DIR_LOGS, TIMEOUT
 
 
 log = get_logger(__file__, DIR_LOGS / 'log.txt')
@@ -58,4 +58,4 @@ while True:
 
     log.info("Завершено.\n")
 
-    time.sleep(3600)  # Every 1 hour
+    time.sleep(TIMEOUT)
