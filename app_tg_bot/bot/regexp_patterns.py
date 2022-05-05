@@ -8,6 +8,9 @@ import re
 from app_tg_bot.bot.third_party.regexp import fill_string_pattern
 
 
+PATTERN_REPLY_ADMIN_STATS = re.compile(r'^admin[ _]stats$|^статистика[ _]админа$', flags=re.IGNORECASE)
+COMMAND_ADMIN_STATS = 'admin_stats'
+
 PATTERN_REPLY_GET_AS_TEXT = re.compile(r'^Последняя запись$', flags=re.IGNORECASE)
 PATTERN_INLINE_GET_BY_DATE = re.compile(r'^get_by_date=(.+)$')
 

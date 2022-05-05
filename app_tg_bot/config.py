@@ -28,6 +28,10 @@ except:
     TOKEN_FILE_NAME.touch()
     sys.exit()
 
+USER_NAME_ADMINS = [
+    '@ilya_petrash',
+]
+
 ERROR_TEXT = 'Возникла какая-то проблема. Попробуйте повторить запрос или попробовать чуть позже...'
 
 MAX_MESSAGE_LENGTH = 4096

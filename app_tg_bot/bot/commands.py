@@ -6,19 +6,23 @@ __author__ = 'ipetrash'
 
 import datetime as DT
 
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, ParseMode
 from telegram.ext import (
     Dispatcher, CallbackContext, MessageHandler, CommandHandler, Filters, CallbackQueryHandler
 )
 
+from app_tg_bot.config import USER_NAME_ADMINS
 from app_tg_bot.bot.common import (
     reply_message, log_func, process_error, log, SeverityEnum,
     reply_text_or_edit_with_keyboard, reply_or_edit_plot_with_keyboard
 )
 from app_tg_bot.bot.regexp_patterns import (
-    PATTERN_REPLY_GET_AS_TEXT, PATTERN_INLINE_GET_BY_DATE, PATTERN_REPLY_GET_LAST_7_AS_CHART,
-    PATTERN_REPLY_GET_LAST_31_AS_CHART, PATTERN_REPLY_GET_ALL_AS_CHART, PATTERN_REPLY_SUBSCRIBE,
-    PATTERN_REPLY_UNSUBSCRIBE, PATTERN_INLINE_GET_AS_CHART,
+    PATTERN_REPLY_ADMIN_STATS, COMMAND_ADMIN_STATS,
+    PATTERN_REPLY_GET_AS_TEXT, PATTERN_INLINE_GET_BY_DATE,
+    PATTERN_REPLY_GET_LAST_7_AS_CHART, PATTERN_REPLY_GET_LAST_31_AS_CHART,
+    PATTERN_REPLY_GET_ALL_AS_CHART,
+    PATTERN_REPLY_SUBSCRIBE, PATTERN_REPLY_UNSUBSCRIBE,
+    PATTERN_INLINE_GET_AS_CHART,
     PATTERN_REPLY_SELECT_DATE, PATTERN_INLINE_SELECT_DATE,
     fill_string_pattern
 )
@@ -28,6 +32,8 @@ from app_tg_bot.bot.third_party import telegramcalendar
 from db import Subscription, MetalRate
 from root_common import get_date_str, MetalEnum, SubscriptionResultEnum, DEFAULT_METAL
 
+
+FILTER_BY_ADMIN = Filters.user(username=USER_NAME_ADMINS)
 
 TEXT_SHOW_TEMP_MESSAGE = SeverityEnum.INFO.get_text('Пожалуйста, подождите {value}')
 PROGRESS_VALUE = ProgressValue.RECTS_SMALL
@@ -75,6 +81,28 @@ def on_start(update: Update, context: CallbackContext):
         update=update,
         context=context,
         reply_markup=get_reply_keyboard(update, context),
+    )
+
+
+@log_func(log)
+def on_admin_stats(update: Update, context: CallbackContext):
+    count = MetalRate.select().count()
+    first_date = get_date_str(MetalRate.select().first().date)
+    last_date = get_date_str(MetalRate.get_last().date)
+
+    subscription_active_count = Subscription.select().where(Subscription.is_active == True).count()
+
+    reply_message(
+        f'<b>Статистика админа</b>\n\n'
+        f'<b>Курсы валют</b>\n'
+        f'Количество: <b><u>{count}</u></b>\n'
+        f'Диапазон значений: <b><u>{first_date} - {last_date}</u></b>\n\n'
+        f'<b>Подписки</b>\n'
+        f'Количество активных: <b><u>{subscription_active_count}</u></b>',
+        update=update, context=context,
+        parse_mode=ParseMode.HTML,
+        severity=SeverityEnum.INFO,
+        reply_markup=get_reply_keyboard(update, context)
     )
 
 
@@ -269,6 +297,9 @@ def on_error(update: Update, context: CallbackContext):
 
 def setup(dp: Dispatcher):
     dp.add_handler(CommandHandler('start', on_start))
+
+    dp.add_handler(CommandHandler(COMMAND_ADMIN_STATS, on_admin_stats, FILTER_BY_ADMIN))
+    dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_ADMIN_STATS) & FILTER_BY_ADMIN, on_admin_stats))
 
     dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_GET_AS_TEXT), on_get_as_text))
     dp.add_handler(CallbackQueryHandler(on_get_as_text, pattern=PATTERN_INLINE_GET_BY_DATE))
