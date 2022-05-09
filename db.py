@@ -280,6 +280,18 @@ class MetalRate(BaseModel):
         query = cls.select().where(*filters).order_by(cls.date.asc())
         return list(query)
 
+    @classmethod
+    def get_all_by_year(cls, year: int) -> list['MetalRate']:
+        query = (
+            cls.select()
+                .where(
+                    cls.date >= get_start_date(year),
+                    cls.date <= get_end_date(year)
+                )
+                .order_by(cls.date.asc())
+        )
+        return list(query)
+
 
 class Subscription(BaseModel):
     user_id = IntegerField(unique=True)
@@ -433,9 +445,3 @@ if __name__ == '__main__':
     obj = Settings.instance()
     print(obj)
     # Settings(id=1, last_date_of_metals_rate=None)
-
-    assert MetalRate.get_prev_next_years(year=1000) == (None, START_DATE.year)
-    assert MetalRate.get_prev_next_years(year=3000) == (MetalRate.get_last_date().year, None)
-    for year in range(START_DATE.year + 1, MetalRate.get_last_date().year):
-        assert MetalRate.get_prev_next_years(year=year) == (year - 1, year + 1), \
-            f'Неправильно определилось значение для {year}'
