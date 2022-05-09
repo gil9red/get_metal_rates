@@ -17,6 +17,7 @@ import matplotlib.dates as mdates
 
 from peewee import SqliteDatabase
 
+from app_parser.config import START_DATE
 from db import MetalRate, Settings, Subscription, db
 from root_common import SubscriptionResultEnum, MetalEnum
 from utils.draw_plot import (
@@ -46,7 +47,7 @@ class TestCaseDB(unittest.TestCase):
         self.assertEqual(MetalRate.get_last_dates(MetalRate.count()), MetalRate.get_last_dates(-1))
         self.assertEqual(MetalRate.get_last_dates(-1), MetalRate.get_last_dates())
         self.assertEqual(MetalRate.get_last_date(), MetalRate.get_last_dates(number=1)[0])
-        self.assertEqual(MetalRate.get_last_date(), MetalRate.get_last_dates()[-1])
+        self.assertEqual(MetalRate.get_last_date(), MetalRate.get_last_dates()[0])
 
     def test_settings(self):
         self.assertEqual(Settings.instance(), Settings.instance())
@@ -125,6 +126,31 @@ class TestCaseDB(unittest.TestCase):
             self.assertFalse(Subscription.has_is_active(user_id))
 
 
+class TestCaseMetalRate(unittest.TestCase):
+    def test_get_last_dates(self):
+        self.assertEqual(MetalRate.get_last_dates(MetalRate.count()), MetalRate.get_last_dates(-1))
+        self.assertEqual(MetalRate.get_last_dates(-1), MetalRate.get_last_dates())
+        self.assertEqual(MetalRate.get_last_date(), MetalRate.get_last_dates(number=1)[0])
+        self.assertEqual(MetalRate.get_last_date(), MetalRate.get_last_dates()[0])
+
+    def test_get_prev_next_years(self):
+        self.assertEqual(
+            MetalRate.get_prev_next_years(year=1000),
+            (None, START_DATE.year)
+        )
+        self.assertEqual(
+            MetalRate.get_prev_next_years(year=3000),
+            (MetalRate.get_last_date().year, None)
+        )
+
+        for year in range(START_DATE.year + 1, MetalRate.get_last_date().year):
+            self.assertEqual(
+                MetalRate.get_prev_next_years(year=year),
+                (year - 1, year + 1),
+                f'Неправильно определилось значение для {year}',
+            )
+
+
 class TestCasePlot(unittest.TestCase):
     def test_draw_plot(self):
         locator = mdates.YearLocator(3)
@@ -163,18 +189,27 @@ class TestCasePlot(unittest.TestCase):
             self.assertTrue(path.read_bytes())
             path.unlink()
 
-    def test_get_plot_for_metal(self):
+    def test_get_plot_for_metal_by_number(self):
         for metal in MetalEnum:
             for number in [7, 31, 180, -1]:
                 with self.subTest(msg=metal.name_lower, number=number):
                     photo = get_plot_for_metal(metal=metal, number=number)
                     assert photo.read()
 
-    def test_get_plot_for_xxx(self):
+    def test_get_plot_for_xxx_by_number(self):
         for draw_func in [get_plot_for_gold, get_plot_for_silver, get_plot_for_platinum, get_plot_for_palladium]:
             for number in [7, 31, 180, -1]:
                 with self.subTest(msg=draw_func.__name__, number=number):
                     photo = draw_func(number)
+                    assert photo.read()
+
+    def test_get_plot_for_metal_by_year(self):
+        last_year = MetalRate.get_last_date().year
+
+        for metal in MetalEnum:
+            for year in [START_DATE.year, last_year]:
+                with self.subTest(msg=metal.name_lower, year=year):
+                    photo = get_plot_for_metal(metal=metal, year=year)
                     assert photo.read()
 
 
