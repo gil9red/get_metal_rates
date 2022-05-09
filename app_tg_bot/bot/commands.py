@@ -14,7 +14,7 @@ from telegram.ext import (
 from app_tg_bot.config import USER_NAME_ADMINS
 from app_tg_bot.bot.common import (
     reply_message, log_func, process_error, log, SeverityEnum,
-    reply_text_or_edit_with_keyboard, reply_or_edit_plot_with_keyboard
+    reply_text_or_edit_with_keyboard, reply_or_edit_plot_with_keyboard, FORMAT_PREV, FORMAT_CURRENT, FORMAT_NEXT
 )
 from app_tg_bot.bot.regexp_patterns import (
     PATTERN_REPLY_ADMIN_STATS, COMMAND_ADMIN_STATS,
@@ -24,6 +24,7 @@ from app_tg_bot.bot.regexp_patterns import (
     PATTERN_REPLY_SUBSCRIBE, PATTERN_REPLY_UNSUBSCRIBE,
     PATTERN_INLINE_GET_AS_CHART,
     PATTERN_REPLY_SELECT_DATE, PATTERN_INLINE_SELECT_DATE,
+    PATTERN_INLINE_GET_CHART_METAL_BY_YEAR,
     CALLBACK_IGNORE,
     fill_string_pattern
 )
@@ -58,11 +59,6 @@ def get_reply_keyboard(update: Update, context: CallbackContext) -> ReplyKeyboar
     return ReplyKeyboardMarkup(commands, resize_keyboard=True)
 
 
-FORMAT_PREV = '❮ {}'
-FORMAT_CURRENT = '· {} ·'
-FORMAT_NEXT = '{} ❯'
-
-
 def get_inline_keyboard_for_date_pagination(for_date: DT.date) -> InlineKeyboardMarkup:
     pattern = PATTERN_INLINE_GET_BY_DATE
     prev_date, next_date = MetalRate.get_prev_next_dates(for_date)
@@ -93,6 +89,56 @@ def get_inline_keyboard_for_date_pagination(for_date: DT.date) -> InlineKeyboard
         )
 
     return InlineKeyboardMarkup.from_row(buttons)
+
+
+def get_inline_keyboard_for_year_pagination(current_metal: MetalEnum, year: int) -> InlineKeyboardMarkup:
+    pattern = PATTERN_INLINE_GET_CHART_METAL_BY_YEAR
+    prev_year, next_year = MetalRate.get_prev_next_years(year=year)
+
+    # Список из 2 списков
+    buttons: list[list[InlineKeyboardButton]] = [[], []]
+
+    for metal in MetalEnum:
+        metal_name = metal.name
+        metal_title = metal.singular
+        is_current = current_metal == metal
+
+        buttons[0].append(
+            InlineKeyboardButton(
+                text=FORMAT_CURRENT.format(metal_title) if is_current else metal_title,
+                callback_data=fill_string_pattern(
+                    pattern,
+                    CALLBACK_IGNORE if is_current else metal_name,
+                    CALLBACK_IGNORE if is_current else year
+                )
+            )
+        )
+
+    if prev_year:
+        buttons[1].append(
+            InlineKeyboardButton(
+                text=FORMAT_PREV.format(prev_year),
+                callback_data=fill_string_pattern(pattern, current_metal.name, prev_year),
+            )
+        )
+
+    # Текущий выбор
+    buttons[1].append(
+        InlineKeyboardButton(
+            text=FORMAT_CURRENT.format(year),
+            callback_data=fill_string_pattern(pattern, CALLBACK_IGNORE, CALLBACK_IGNORE),
+        )
+    )
+
+    if next_year:
+        buttons[1].append(
+            InlineKeyboardButton(
+                text=FORMAT_NEXT.format(next_year),
+                callback_data=fill_string_pattern(pattern, current_metal.name, next_year)
+            )
+        )
+
+    return InlineKeyboardMarkup(buttons)
 
 
 @log_func(log)
@@ -207,10 +253,9 @@ def on_select_date(update: Update, context: CallbackContext):
 )
 def on_get_last_7_as_chart(update: Update, context: CallbackContext):
     reply_or_edit_plot_with_keyboard(
+        update=update,
         metal=DEFAULT_METAL,
         number=7,
-        update=update,
-        context=context,
     )
 
 
@@ -221,10 +266,9 @@ def on_get_last_7_as_chart(update: Update, context: CallbackContext):
 )
 def on_get_last_31_as_chart(update: Update, context: CallbackContext):
     reply_or_edit_plot_with_keyboard(
+        update=update,
         metal=DEFAULT_METAL,
         number=31,
-        update=update,
-        context=context,
     )
 
 
@@ -235,10 +279,17 @@ def on_get_last_31_as_chart(update: Update, context: CallbackContext):
 )
 def on_get_all_as_chart(update: Update, context: CallbackContext):
     reply_or_edit_plot_with_keyboard(
+        update=update,
         metal=DEFAULT_METAL,
         number=-1,
-        update=update,
-        context=context,
+        reply_buttons_bottom=[
+            InlineKeyboardButton(
+                text='Посмотреть за определенный год',
+                callback_data=fill_string_pattern(
+                    PATTERN_INLINE_GET_CHART_METAL_BY_YEAR, DEFAULT_METAL.name, -1
+                )
+            ),
+        ],
     )
 
 
@@ -253,10 +304,37 @@ def on_callback_get_as_chart(update: Update, context: CallbackContext):
     metal = MetalEnum[metal_name]
 
     reply_or_edit_plot_with_keyboard(
+        update=update,
         metal=metal,
         number=number,
+    )
+
+
+@log_func(log)
+@show_temp_message_decorator(
+    text=TEXT_SHOW_TEMP_MESSAGE,
+    progress_value=PROGRESS_VALUE,
+)
+def on_get_all_by_year(update: Update, context: CallbackContext):
+    query = update.callback_query
+    if query:
+        query.answer()
+
+    metal_name, year_str = context.match.groups()
+    if metal_name == CALLBACK_IGNORE:
+        return
+
+    metal = MetalEnum[metal_name]
+    year = int(year_str)
+    if year == -1:
+        year = MetalRate.get_last_date().year
+
+    reply_or_edit_plot_with_keyboard(
         update=update,
-        context=context,
+        metal=metal,
+        year=year,
+        need_answer=False,
+        reply_markup=get_inline_keyboard_for_year_pagination(metal, year),
     )
 
 
@@ -338,6 +416,8 @@ def setup(dp: Dispatcher):
     dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_GET_LAST_31_AS_CHART), on_get_last_31_as_chart))
     dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_GET_ALL_AS_CHART), on_get_all_as_chart))
     dp.add_handler(CallbackQueryHandler(on_callback_get_as_chart, pattern=PATTERN_INLINE_GET_AS_CHART))
+
+    dp.add_handler(CallbackQueryHandler(on_get_all_by_year, pattern=PATTERN_INLINE_GET_CHART_METAL_BY_YEAR))
 
     dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_SUBSCRIBE), on_subscribe))
     dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_UNSUBSCRIBE), on_unsubscribe))

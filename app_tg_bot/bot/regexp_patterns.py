@@ -22,6 +22,8 @@ PATTERN_REPLY_GET_LAST_31_AS_CHART = re.compile(r'^График за 31$', flags
 PATTERN_REPLY_GET_ALL_AS_CHART = re.compile(r'^График за все данные$', flags=re.IGNORECASE)
 PATTERN_INLINE_GET_AS_CHART = re.compile(r'^get_last_(.+)_as_chart=(.+)$')
 
+PATTERN_INLINE_GET_CHART_METAL_BY_YEAR = re.compile(r'^get_chart metal=(.+) year=(.+)$')
+
 PATTERN_REPLY_SUBSCRIBE = re.compile(r'^Подписаться$', flags=re.IGNORECASE)
 PATTERN_REPLY_UNSUBSCRIBE = re.compile(r'^Отписаться$', flags=re.IGNORECASE)
 

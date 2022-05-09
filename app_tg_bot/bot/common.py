@@ -26,6 +26,11 @@ from root_common import get_logger, MetalEnum
 from utils import draw_plot
 
 
+FORMAT_PREV = '❮ {}'
+FORMAT_CURRENT = '· {} ·'
+FORMAT_NEXT = '{} ❯'
+
+
 # SOURCE: https://github.com/gil9red/telegram__random_bashim_bot/blob/e9d705a52223597c6965ef82f0b0d55fa11722c2/bot/parsers.py#L37
 def caller_name() -> str:
     """Return the calling function's name."""
@@ -164,23 +169,31 @@ def reply_text_or_edit_with_keyboard(
 
 
 def reply_or_edit_plot_with_keyboard(
-    metal: MetalEnum,
-    number: int,
     update: Update,
-    context: CallbackContext,
+    metal: MetalEnum,
+    number: int = -1,
+    year: int = None,
     quote: bool = True,
+    need_answer: bool = True,
+    reply_markup: ReplyMarkup = None,
+    reply_buttons_bottom: list[InlineKeyboardButton] = None,
     **kwargs,
 ):
     message = update.effective_message
     query = update.callback_query
-    if query:
+    if query and need_answer:
         query.answer()
 
-    photo = draw_plot.get_plot_for_metal(metal=metal, number=number)
-    reply_markup = get_inline_keyboard_for_metal_switch_in_chart(
-        current_metal=metal,
-        number=number,
-    )
+    photo = draw_plot.get_plot_for_metal(metal=metal, number=number, year=year)
+
+    if not reply_markup:
+        # TODO: Вынести за функцию, пусть явно передается reply_markup
+        reply_markup = get_inline_keyboard_for_metal_switch_in_chart(
+            current_metal=metal,
+            number=number,
+        )
+    if reply_markup and reply_buttons_bottom:
+        reply_markup.inline_keyboard.append(reply_buttons_bottom)
 
     # Для запросов CallbackQuery нужно менять текущее сообщение
     if query:
@@ -223,7 +236,7 @@ def get_inline_keyboard_for_metal_switch_in_chart(
 
         buttons.append(
             InlineKeyboardButton(
-                text=f'· {metal_title} ·' if current_metal == metal else metal_title,
+                text=FORMAT_CURRENT.format(metal_title) if current_metal == metal else metal_title,
                 callback_data=fill_string_pattern(pattern, number, metal_name)
             )
         )
