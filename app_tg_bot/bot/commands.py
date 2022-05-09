@@ -24,6 +24,7 @@ from app_tg_bot.bot.regexp_patterns import (
     PATTERN_REPLY_SUBSCRIBE, PATTERN_REPLY_UNSUBSCRIBE,
     PATTERN_INLINE_GET_AS_CHART,
     PATTERN_REPLY_SELECT_DATE, PATTERN_INLINE_SELECT_DATE,
+    CALLBACK_IGNORE,
     fill_string_pattern
 )
 from app_tg_bot.bot.third_party.auto_in_progress_message import show_temp_message_decorator, ProgressValue
@@ -57,6 +58,11 @@ def get_reply_keyboard(update: Update, context: CallbackContext) -> ReplyKeyboar
     return ReplyKeyboardMarkup(commands, resize_keyboard=True)
 
 
+FORMAT_PREV = '❮ {}'
+FORMAT_CURRENT = '· {} ·'
+FORMAT_NEXT = '{} ❯'
+
+
 def get_inline_keyboard_for_date_pagination(for_date: DT.date) -> InlineKeyboardMarkup:
     pattern = PATTERN_INLINE_GET_BY_DATE
     prev_date, next_date = MetalRate.get_prev_next_dates(for_date)
@@ -65,15 +71,23 @@ def get_inline_keyboard_for_date_pagination(for_date: DT.date) -> InlineKeyboard
     if prev_date:
         buttons.append(
             InlineKeyboardButton(
-                text=f'❮ {get_date_str(prev_date)}',
+                text=FORMAT_PREV.format(get_date_str(prev_date)),
                 callback_data=fill_string_pattern(pattern, prev_date),
             )
         )
 
+    # Текущий выбор
+    buttons.append(
+        InlineKeyboardButton(
+            text=FORMAT_CURRENT.format(get_date_str(for_date)),
+            callback_data=fill_string_pattern(pattern, CALLBACK_IGNORE),
+        )
+    )
+
     if next_date:
         buttons.append(
             InlineKeyboardButton(
-                text=f'{get_date_str(next_date)} ❯',
+                text=FORMAT_NEXT.format(get_date_str(next_date)),
                 callback_data=fill_string_pattern(pattern, next_date),
             )
         )
@@ -122,7 +136,11 @@ def on_get_as_text(update: Update, context: CallbackContext):
         query.answer()
 
     try:
-        for_date: DT.date = DT.date.fromisoformat(context.match.group(1))
+        value: str = context.match.group(1)
+        if value == CALLBACK_IGNORE:
+            return
+
+        for_date: DT.date = DT.date.fromisoformat(value)
         metal_rate: MetalRate = MetalRate.get_by(for_date)
     except:
         metal_rate: MetalRate = MetalRate.get_last()

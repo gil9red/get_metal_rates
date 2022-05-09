@@ -25,6 +25,8 @@ PATTERN_INLINE_GET_AS_CHART = re.compile(r'^get_last_(.+)_as_chart=(.+)$')
 PATTERN_REPLY_SUBSCRIBE = re.compile(r'^Подписаться$', flags=re.IGNORECASE)
 PATTERN_REPLY_UNSUBSCRIBE = re.compile(r'^Отписаться$', flags=re.IGNORECASE)
 
+CALLBACK_IGNORE = 'IGNORE'
+
 
 if __name__ == '__main__':
     import datetime as DT
