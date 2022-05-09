@@ -93,7 +93,6 @@ def get_inline_keyboard_for_date_pagination(for_date: DT.date) -> InlineKeyboard
 
 def get_inline_keyboard_for_year_pagination(current_metal: MetalEnum, year: int) -> InlineKeyboardMarkup:
     pattern = PATTERN_INLINE_GET_CHART_METAL_BY_YEAR
-    prev_year, next_year = MetalRate.get_prev_next_years(year=year)
 
     # Список из 2 списков
     buttons: list[list[InlineKeyboardButton]] = [[], []]
@@ -114,6 +113,7 @@ def get_inline_keyboard_for_year_pagination(current_metal: MetalEnum, year: int)
             )
         )
 
+    prev_year, next_year = MetalRate.get_prev_next_years(year=year)
     if prev_year:
         buttons[1].append(
             InlineKeyboardButton(
