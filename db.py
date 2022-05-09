@@ -21,7 +21,7 @@ from playhouse.sqliteq import SqliteQueueDatabase
 from app_parser.config import START_DATE
 from app_parser import parser
 from root_config import DB_FILE_NAME
-from root_common import get_date_str, SubscriptionResultEnum
+from root_common import get_date_str, get_start_date, get_end_date, SubscriptionResultEnum
 
 
 ITEMS_PER_PAGE: int = 10
@@ -227,6 +227,32 @@ class MetalRate(BaseModel):
         return prev_date, next_date
 
     @classmethod
+    def get_prev_next_years(cls, year: int) -> tuple[int, int]:
+        filters = [cls.date < get_start_date(year)]
+        prev_val = (
+            cls.select(cls.date)
+                .distinct()
+                .where(*filters)
+                .limit(1)
+                .order_by(cls.date.desc())
+                .first()
+        )
+        prev_year = prev_val.date.year if prev_val else None
+
+        filters = [cls.date > get_end_date(year)]
+        next_val = (
+            cls.select(cls.date)
+                .distinct()
+                .where(*filters)
+                .limit(1)
+                .order_by(cls.date.asc())
+                .first()
+        )
+        next_year = next_val.date.year if next_val else None
+
+        return prev_year, next_year
+
+    @classmethod
     def get_last_date(cls) -> DT.date:
         return cls.get_last_dates(number=1)[0]
 
@@ -407,3 +433,9 @@ if __name__ == '__main__':
     obj = Settings.instance()
     print(obj)
     # Settings(id=1, last_date_of_metals_rate=None)
+
+    assert MetalRate.get_prev_next_years(year=1000) == (None, START_DATE.year)
+    assert MetalRate.get_prev_next_years(year=3000) == (MetalRate.get_last_date().year, None)
+    for year in range(START_DATE.year + 1, MetalRate.get_last_date().year):
+        assert MetalRate.get_prev_next_years(year=year) == (year - 1, year + 1), \
+            f'Неправильно определилось значение для {year}'

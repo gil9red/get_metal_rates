@@ -50,6 +50,14 @@ def get_date_str(date: DT.date) -> str:
     return date.strftime(DATE_FORMAT)
 
 
+def get_start_date(year: int) -> DT.date:
+    return DT.date(year, 1, 1)
+
+
+def get_end_date(year: int) -> DT.date:
+    return DT.date(year + 1, 1, 1) - DT.timedelta(days=1)
+
+
 class SubscriptionResultEnum(enum.Enum):
     SUBSCRIBE_OK = enum.auto()
     UNSUBSCRIBE_OK = enum.auto()
