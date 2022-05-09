@@ -58,18 +58,27 @@ def get_reply_keyboard(update: Update, context: CallbackContext) -> ReplyKeyboar
 
 
 def get_inline_keyboard_for_date_pagination(for_date: DT.date) -> InlineKeyboardMarkup:
+    pattern = PATTERN_INLINE_GET_BY_DATE
     prev_date, next_date = MetalRate.get_prev_next_dates(for_date)
 
-    prev_date_str = f'❮ {get_date_str(prev_date)}' if prev_date else ''
-    prev_date_callback_data = fill_string_pattern(PATTERN_INLINE_GET_BY_DATE, prev_date if prev_date else '')
+    buttons = []
+    if prev_date:
+        buttons.append(
+            InlineKeyboardButton(
+                text=f'❮ {get_date_str(prev_date)}',
+                callback_data=fill_string_pattern(pattern, prev_date),
+            )
+        )
 
-    next_date_str = f'{get_date_str(next_date)} ❯' if next_date else ''
-    next_date_callback_data = fill_string_pattern(PATTERN_INLINE_GET_BY_DATE, next_date if next_date else '')
+    if next_date:
+        buttons.append(
+            InlineKeyboardButton(
+                text=f'{get_date_str(next_date)} ❯',
+                callback_data=fill_string_pattern(pattern, next_date),
+            )
+        )
 
-    return InlineKeyboardMarkup.from_row([
-        InlineKeyboardButton(text=prev_date_str, callback_data=prev_date_callback_data),
-        InlineKeyboardButton(text=next_date_str, callback_data=next_date_callback_data),
-    ])
+    return InlineKeyboardMarkup.from_row(buttons)
 
 
 @log_func(log)
