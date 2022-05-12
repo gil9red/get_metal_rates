@@ -4,7 +4,6 @@
 __author__ = 'ipetrash'
 
 
-import logging
 import time
 
 from telegram import Bot, ParseMode
