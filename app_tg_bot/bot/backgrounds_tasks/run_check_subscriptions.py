@@ -31,6 +31,8 @@ def sending_notifications():
             if not subscriptions:
                 continue
 
+            log.info(f'{prefix} Выполняется рассылка к {len(subscriptions)} пользователям')
+
             text = f'<b>Рассылка</b>\n{MetalRate.get_last().get_description(show_diff=True)}'
             for subscription in subscriptions:
                 bot.send_message(
