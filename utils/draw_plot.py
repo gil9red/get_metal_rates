@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-__author__ = 'ipetrash'
+__author__ = "ipetrash"
 
 
 import datetime as DT
@@ -21,14 +21,14 @@ from root_common import get_date_str, MetalEnum
 
 
 def draw_plot(
-        out: Union[str, Path, BinaryIO],
-        days: list[DT.date],
-        values: list[Decimal],
-        locator: mdates.DateLocator = None,
-        title: str = None,
-        color: str = 'orange',
-        date_format: str = DATE_FORMAT,
-        axis_off: bool = False,
+    out: Union[str, Path, BinaryIO],
+    days: list[DT.date],
+    values: list[Decimal],
+    locator: mdates.DateLocator = None,
+    title: str = None,
+    color: str = "orange",
+    date_format: str = DATE_FORMAT,
+    axis_off: bool = False,
 ):
     if not locator:
         locator = mdates.AutoDateLocator()
@@ -50,10 +50,10 @@ def draw_plot(
         ax.set_xticks([])
         ax.set_yticks([])
 
-    fig.savefig(out, format='png')
+    fig.savefig(out, format="png")
 
     # После записи в файловый объект нужно внутренний указатель переместить в начало, иначе read не будет работать
-    if hasattr(out, 'seek'):  # Для BinaryIO и ему подобных
+    if hasattr(out, "seek"):  # Для BinaryIO и ему подобных
         out.seek(0)
 
 
@@ -77,7 +77,7 @@ def get_plot_for_metal(
     title = title_format.format(
         metal_name=metal.plural,
         start_date=get_date_str(days[0]),
-        end_date=get_date_str(days[-1])
+        end_date=get_date_str(days[-1]),
     )
 
     bytes_io = BytesIO()
@@ -107,14 +107,14 @@ def get_plot_for_palladium(number: int = -1, year: int = None) -> BytesIO:
     return get_plot_for_metal(MetalEnum.PALLADIUM, number=number, year=year)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     DIR = Path(__file__).resolve().parent
-    images_dir = DIR / 'chart_images'
+    images_dir = DIR / "chart_images"
     images_dir.mkdir(parents=True, exist_ok=True)
 
     for metal in MetalEnum:
         photo = get_plot_for_metal(metal)
-        path = images_dir / f'get_plot_for_{metal.name}.png'
+        path = images_dir / f"get_plot_for_{metal.name}.png"
         path.write_bytes(photo.read())
 
     days = []
@@ -125,16 +125,17 @@ if __name__ == '__main__':
 
     title = f"Стоимость грамма золота в рублях за {get_date_str(days[0])} - {get_date_str(days[-1])}"
 
-    path = images_dir / 'draw_plot__plot_gold.png'
+    path = images_dir / "draw_plot__plot_gold.png"
     draw_plot(
         out=path,
-        days=days, values=values,
+        days=days,
+        values=values,
         title=title,
     )
 
     metal = MetalEnum.GOLD
     last_year = MetalRate.get_last_date().year
     for year in (last_year - 1, last_year):
-        path = images_dir / f'get_plot_for_{metal.name}_year{year}.png'
+        path = images_dir / f"get_plot_for_{metal.name}_year{year}.png"
         photo = get_plot_for_metal(metal=metal, year=year)
         path.write_bytes(photo.read())
