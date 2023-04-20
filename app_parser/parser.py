@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-__author__ = 'ipetrash'
+__author__ = "ipetrash"
 
 
 import datetime as DT
@@ -25,9 +25,9 @@ session = requests.session()
 #       __ddgid=r6nn<...>4W; __ddg2=u5rq<...>wV9; __ddg1=gzBn<...>82mir; __ddgmark=W6X<...>owfI; __ddg5=ocM<...>tvM
 if FILE_COOKIES.exists():
     try:
-        cookies_text = FILE_COOKIES.read_text('utf-8')
-        for x in cookies_text.split('; '):
-            name, value = x.split('=', maxsplit=1)
+        cookies_text = FILE_COOKIES.read_text("utf-8")
+        for x in cookies_text.split("; "):
+            name, value = x.split("=", maxsplit=1)
             session.cookies.set(name, value)
     except:
         pass
@@ -68,19 +68,19 @@ def get_pair_dates(start_date: DT.date, end_date: DT.date = None) -> list[tuple[
 
 def get_metal_rates(date_req1: DT.date, date_req2: DT.date) -> list[MetalRate]:
     params = {
-        'date_req1': get_date_str(date_req1),
-        'date_req2': get_date_str(date_req2),
+        "date_req1": get_date_str(date_req1),
+        "date_req2": get_date_str(date_req2),
     }
-    rs = session.get('http://www.cbr.ru/scripts/xml_metall.asp', params=params)
+    rs = session.get("http://www.cbr.ru/scripts/xml_metall.asp", params=params)
     rs.raise_for_status()
 
-    root = BeautifulSoup(rs.content, 'html.parser')
+    root = BeautifulSoup(rs.content, "html.parser")
     date_by_metal_rate = dict()
 
-    for tag in root.select('Record'):
-        date = DT.datetime.strptime(tag['date'], '%d.%m.%Y').date()
-        code = int(tag['code'])
-        amount = decimal.Decimal(tag.sell.text.replace(',', '.'))
+    for tag in root.select("Record"):
+        date = DT.datetime.strptime(tag["date"], "%d.%m.%Y").date()
+        code = int(tag["code"])
+        amount = decimal.Decimal(tag.sell.text.replace(",", "."))
 
         if date not in date_by_metal_rate:
             date_by_metal_rate[date] = MetalRate(date)
@@ -96,19 +96,19 @@ def get_metal_rates(date_req1: DT.date, date_req2: DT.date) -> list[MetalRate]:
     return list(date_by_metal_rate.values())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pair_dates = get_pair_dates(START_DATE)
     date_req1_first, date_req2_first = pair_dates[0]
     date_req1_last, date_req2_last = pair_dates[-1]
-    print(f'Total: {len(pair_dates)}')
-    print(f'    {date_req1_first} - {date_req2_first}')
-    print('    ...')
-    print(f'    {date_req1_last} - {date_req2_last}')
+    print(f"Total: {len(pair_dates)}")
+    print(f"    {date_req1_first} - {date_req2_first}")
+    print("    ...")
+    print(f"    {date_req1_last} - {date_req2_last}")
     print()
 
     date_req1 = DT.date.today().replace(day=1)
     date_req2 = get_next_date(date_req1)
 
     metal_rates = get_metal_rates(date_req1, date_req2)
-    print(f'Metal rates {date_req1} - {date_req2} ({len(metal_rates)}):')
-    print(*metal_rates, sep='\n')
+    print(f"Metal rates {date_req1} - {date_req2} ({len(metal_rates)}):")
+    print(*metal_rates, sep="\n")
