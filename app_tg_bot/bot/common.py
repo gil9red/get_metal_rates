@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-__author__ = 'ipetrash'
+__author__ = "ipetrash"
 
 
 import enum
@@ -12,7 +12,13 @@ import logging
 from typing import Union, Optional
 
 from telegram import (
-    Update, ReplyMarkup, Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
+    Update,
+    ReplyMarkup,
+    Message,
+    CallbackQuery,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    InputMediaPhoto,
 )
 from telegram.error import NetworkError, BadRequest
 from telegram.ext import CallbackContext
@@ -26,9 +32,9 @@ from root_common import get_logger, MetalEnum
 from utils import draw_plot
 
 
-FORMAT_PREV = '❮ {}'
-FORMAT_CURRENT = '· {} ·'
-FORMAT_NEXT = '{} ❯'
+FORMAT_PREV = "❮ {}"
+FORMAT_CURRENT = "· {} ·"
+FORMAT_NEXT = "{} ❯"
 
 
 # SOURCE: https://github.com/gil9red/telegram__random_bashim_bot/blob/e9d705a52223597c6965ef82f0b0d55fa11722c2/bot/parsers.py#L37
@@ -57,17 +63,19 @@ def log_func(log: logging.Logger):
                 try:
                     message = update.effective_message.text
                 except:
-                    message = ''
+                    message = ""
 
                 try:
                     query_data = update.callback_query.data
                 except:
-                    query_data = ''
+                    query_data = ""
 
-                msg = f'[chat_id={chat_id}, user_id={user_id}, ' \
-                      f'first_name={first_name!r}, last_name={last_name!r}, ' \
-                      f'username={username!r}, language_code={language_code}, ' \
-                      f'message={message!r}, query_data={query_data!r}]'
+                msg = (
+                    f"[chat_id={chat_id}, user_id={user_id}, "
+                    f"first_name={first_name!r}, last_name={last_name!r}, "
+                    f"username={username!r}, language_code={language_code}, "
+                    f"message={message!r}, query_data={query_data!r}]"
+                )
                 msg = func.__name__ + msg
 
                 log.debug(msg)
@@ -75,27 +83,28 @@ def log_func(log: logging.Logger):
             return func(update, context)
 
         return wrapper
+
     return actual_decorator
 
 
 class SeverityEnum(enum.Enum):
-    NONE = '{text}'
-    INFO = 'ℹ️ {text}'
-    ERROR = '⚠ {text}'
+    NONE = "{text}"
+    INFO = "ℹ️ {text}"
+    ERROR = "⚠ {text}"
 
     def get_text(self, text: str) -> str:
         return self.value.format(text=text)
 
 
 def reply_message(
-        text: str,
-        update: Update,
-        context: CallbackContext,
-        photo: Union[FileInput, PhotoSize] = None,
-        severity: SeverityEnum = SeverityEnum.NONE,
-        reply_markup: ReplyMarkup = None,
-        quote: bool = True,
-        **kwargs
+    text: str,
+    update: Update,
+    context: CallbackContext,
+    photo: Union[FileInput, PhotoSize] = None,
+    severity: SeverityEnum = SeverityEnum.NONE,
+    reply_markup: ReplyMarkup = None,
+    quote: bool = True,
+    **kwargs,
 ):
     message = update.effective_message
 
@@ -123,7 +132,7 @@ def reply_message(
 
 
 def process_error(log: logging.Logger, update: Update, context: CallbackContext):
-    log.error('Error: %s\nUpdate: %s', context.error, update, exc_info=context.error)
+    log.error("Error: %s\nUpdate: %s", context.error, update, exc_info=context.error)
     if update:
         # Не отправляем ошибку пользователю при проблемах с сетью (типа, таймаут)
         if isinstance(context.error, NetworkError):
@@ -144,7 +153,9 @@ def reply_text_or_edit_with_keyboard(
     # Для запросов CallbackQuery нужно менять текущее сообщение
     if query:
         # Fix error: "telegram.error.BadRequest: Message is not modified"
-        if text == query.message.text and is_equal_inline_keyboards(reply_markup, query.message.reply_markup):
+        if text == query.message.text and is_equal_inline_keyboards(
+            reply_markup, query.message.reply_markup
+        ):
             return
 
         try:
@@ -154,7 +165,7 @@ def reply_text_or_edit_with_keyboard(
                 **kwargs,
             )
         except BadRequest as e:
-            if 'Message is not modified' in str(e):
+            if "Message is not modified" in str(e):
                 return
 
             raise e
@@ -208,7 +219,7 @@ def reply_or_edit_plot_with_keyboard(
                 **kwargs,
             )
         except BadRequest as e:
-            if 'Message is not modified' in str(e):
+            if "Message is not modified" in str(e):
                 return
 
             raise e
@@ -224,8 +235,8 @@ def reply_or_edit_plot_with_keyboard(
 
 # SOURCE: https://github.com/gil9red/telegram__random_bashim_bot/blob/e9c98248f10c4a74f0e26dcf5a949bf2260f57d4/common.py#L147
 def get_inline_keyboard_for_metal_switch_in_chart(
-        current_metal: MetalEnum,
-        number: Union[str, int],
+    current_metal: MetalEnum,
+    number: Union[str, int],
 ) -> InlineKeyboardMarkup:
     pattern = PATTERN_INLINE_GET_AS_CHART
 
@@ -237,7 +248,7 @@ def get_inline_keyboard_for_metal_switch_in_chart(
         buttons.append(
             InlineKeyboardButton(
                 text=FORMAT_CURRENT.format(metal_title) if current_metal == metal else metal_title,
-                callback_data=fill_string_pattern(pattern, number, metal_name)
+                callback_data=fill_string_pattern(pattern, number, metal_name),
             )
         )
 
@@ -246,17 +257,17 @@ def get_inline_keyboard_for_metal_switch_in_chart(
 
 def is_equal_inline_keyboards(
         keyboard_1: Union[InlineKeyboardMarkup, str],
-        keyboard_2: InlineKeyboardMarkup
+        keyboard_2: InlineKeyboardMarkup,
 ) -> bool:
     if isinstance(keyboard_1, InlineKeyboardMarkup):
-        keyboard_1_inline_keyboard = keyboard_1.to_dict()['inline_keyboard']
+        keyboard_1_inline_keyboard = keyboard_1.to_dict()["inline_keyboard"]
     elif isinstance(keyboard_1, str):
-        keyboard_1_inline_keyboard = json.loads(keyboard_1)['inline_keyboard']
+        keyboard_1_inline_keyboard = json.loads(keyboard_1)["inline_keyboard"]
     else:
-        raise Exception(f'Unsupported format (keyboard_1={type(keyboard_1)})!')
+        raise Exception(f"Unsupported format (keyboard_1={type(keyboard_1)})!")
 
-    keyboard_2_inline_keyboard = keyboard_2.to_dict()['inline_keyboard']
+    keyboard_2_inline_keyboard = keyboard_2.to_dict()["inline_keyboard"]
     return keyboard_1_inline_keyboard == keyboard_2_inline_keyboard
 
 
-log = get_logger(__file__, DIR_LOGS / 'log.txt')
+log = get_logger(__file__, DIR_LOGS / "log.txt")
