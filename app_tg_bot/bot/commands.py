@@ -1,34 +1,61 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-__author__ = 'ipetrash'
+__author__ = "ipetrash"
 
 
 import datetime as DT
 
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, ParseMode
+from telegram import (
+    Update,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    ReplyKeyboardMarkup,
+    ParseMode,
+)
 from telegram.ext import (
-    Dispatcher, CallbackContext, MessageHandler, CommandHandler, Filters, CallbackQueryHandler
+    Dispatcher,
+    CallbackContext,
+    MessageHandler,
+    CommandHandler,
+    Filters,
+    CallbackQueryHandler,
 )
 
 from app_tg_bot.config import USER_NAME_ADMINS
 from app_tg_bot.bot.common import (
-    reply_message, log_func, process_error, log, SeverityEnum,
-    reply_text_or_edit_with_keyboard, reply_or_edit_plot_with_keyboard, FORMAT_PREV, FORMAT_CURRENT, FORMAT_NEXT
+    reply_message,
+    log_func,
+    process_error,
+    log,
+    SeverityEnum,
+    reply_text_or_edit_with_keyboard,
+    reply_or_edit_plot_with_keyboard,
+    FORMAT_PREV,
+    FORMAT_CURRENT,
+    FORMAT_NEXT,
 )
 from app_tg_bot.bot.regexp_patterns import (
-    PATTERN_REPLY_ADMIN_STATS, COMMAND_ADMIN_STATS,
-    PATTERN_REPLY_GET_AS_TEXT, PATTERN_INLINE_GET_BY_DATE,
-    PATTERN_REPLY_GET_LAST_7_AS_CHART, PATTERN_REPLY_GET_LAST_31_AS_CHART,
+    PATTERN_REPLY_ADMIN_STATS,
+    COMMAND_ADMIN_STATS,
+    PATTERN_REPLY_GET_AS_TEXT,
+    PATTERN_INLINE_GET_BY_DATE,
+    PATTERN_REPLY_GET_LAST_7_AS_CHART,
+    PATTERN_REPLY_GET_LAST_31_AS_CHART,
     PATTERN_REPLY_GET_ALL_AS_CHART,
-    PATTERN_REPLY_SUBSCRIBE, PATTERN_REPLY_UNSUBSCRIBE,
+    PATTERN_REPLY_SUBSCRIBE,
+    PATTERN_REPLY_UNSUBSCRIBE,
     PATTERN_INLINE_GET_AS_CHART,
-    PATTERN_REPLY_SELECT_DATE, PATTERN_INLINE_SELECT_DATE,
+    PATTERN_REPLY_SELECT_DATE,
+    PATTERN_INLINE_SELECT_DATE,
     PATTERN_INLINE_GET_CHART_METAL_BY_YEAR,
     CALLBACK_IGNORE,
-    fill_string_pattern
+    fill_string_pattern,
 )
-from app_tg_bot.bot.third_party.auto_in_progress_message import show_temp_message_decorator, ProgressValue
+from app_tg_bot.bot.third_party.auto_in_progress_message import (
+    show_temp_message_decorator,
+    ProgressValue,
+)
 from app_tg_bot.bot.third_party import telegramcalendar
 
 from db import Subscription, MetalRate
@@ -37,7 +64,7 @@ from root_common import get_date_str, MetalEnum, SubscriptionResultEnum, DEFAULT
 
 FILTER_BY_ADMIN = Filters.user(username=USER_NAME_ADMINS)
 
-TEXT_SHOW_TEMP_MESSAGE = SeverityEnum.INFO.get_text('Пожалуйста, подождите {value}')
+TEXT_SHOW_TEMP_MESSAGE = SeverityEnum.INFO.get_text("Пожалуйста, подождите {value}")
 PROGRESS_VALUE = ProgressValue.RECTS_SMALL
 
 
@@ -51,7 +78,7 @@ def get_reply_keyboard(update: Update, context: CallbackContext) -> ReplyKeyboar
         ],
         [
             fill_string_pattern(PATTERN_REPLY_GET_LAST_7_AS_CHART),
-            fill_string_pattern(PATTERN_REPLY_GET_LAST_31_AS_CHART)
+            fill_string_pattern(PATTERN_REPLY_GET_LAST_31_AS_CHART),
         ],
         [fill_string_pattern(PATTERN_REPLY_GET_ALL_AS_CHART)],
         [fill_string_pattern(PATTERN_REPLY_UNSUBSCRIBE) if is_active else fill_string_pattern(PATTERN_REPLY_SUBSCRIBE)]
@@ -91,7 +118,10 @@ def get_inline_keyboard_for_date_pagination(for_date: DT.date) -> InlineKeyboard
     return InlineKeyboardMarkup.from_row(buttons)
 
 
-def get_inline_keyboard_for_year_pagination(current_metal: MetalEnum, current_year: int) -> InlineKeyboardMarkup:
+def get_inline_keyboard_for_year_pagination(
+    current_metal: MetalEnum,
+    current_year: int,
+) -> InlineKeyboardMarkup:
     pattern = PATTERN_INLINE_GET_CHART_METAL_BY_YEAR
 
     # Список из 2 списков
@@ -108,8 +138,8 @@ def get_inline_keyboard_for_year_pagination(current_metal: MetalEnum, current_ye
                 callback_data=fill_string_pattern(
                     pattern,
                     CALLBACK_IGNORE if is_current else metal_name,
-                    CALLBACK_IGNORE if is_current else current_year
-                )
+                    CALLBACK_IGNORE if is_current else current_year,
+                ),
             )
         )
 
@@ -118,7 +148,9 @@ def get_inline_keyboard_for_year_pagination(current_metal: MetalEnum, current_ye
         buttons[1].append(
             InlineKeyboardButton(
                 text=FORMAT_PREV.format(prev_year),
-                callback_data=fill_string_pattern(pattern, current_metal.name, prev_year),
+                callback_data=fill_string_pattern(
+                    pattern, current_metal.name, prev_year
+                ),
             )
         )
 
@@ -126,7 +158,9 @@ def get_inline_keyboard_for_year_pagination(current_metal: MetalEnum, current_ye
     buttons[1].append(
         InlineKeyboardButton(
             text=FORMAT_CURRENT.format(current_year),
-            callback_data=fill_string_pattern(pattern, CALLBACK_IGNORE, CALLBACK_IGNORE),
+            callback_data=fill_string_pattern(
+                pattern, CALLBACK_IGNORE, CALLBACK_IGNORE
+            ),
         )
     )
 
@@ -134,7 +168,9 @@ def get_inline_keyboard_for_year_pagination(current_metal: MetalEnum, current_ye
         buttons[1].append(
             InlineKeyboardButton(
                 text=FORMAT_NEXT.format(next_year),
-                callback_data=fill_string_pattern(pattern, current_metal.name, next_year)
+                callback_data=fill_string_pattern(
+                    pattern, current_metal.name, next_year
+                ),
             )
         )
 
@@ -144,9 +180,9 @@ def get_inline_keyboard_for_year_pagination(current_metal: MetalEnum, current_ye
 @log_func(log)
 def on_start(update: Update, context: CallbackContext):
     reply_message(
-        f'Приветствую, {update.effective_user.name}! 🙂\n'
-        'Данный бот способен отслеживать курсы драгоценных металлов и отправлять вам уведомление при появлении новых.\n'
-        'С помощью меню вы можете подписаться/отписаться от рассылки, посмотреть курсы текстом или на графике',
+        f"Приветствую, {update.effective_user.name}! 🙂\n"
+        "Данный бот способен отслеживать курсы драгоценных металлов и отправлять вам уведомление при появлении новых.\n"
+        "С помощью меню вы можете подписаться/отписаться от рассылки, посмотреть курсы текстом или на графике",
         update=update,
         context=context,
         reply_markup=get_reply_keyboard(update, context),
@@ -162,16 +198,16 @@ def on_admin_stats(update: Update, context: CallbackContext):
     subscription_active_count = Subscription.select().where(Subscription.is_active == True).count()
 
     reply_message(
-        f'<b>Статистика админа</b>\n\n'
-        f'<b>Курсы валют</b>\n'
-        f'Количество: <b><u>{count}</u></b>\n'
-        f'Диапазон значений: <b><u>{first_date} - {last_date}</u></b>\n\n'
-        f'<b>Подписки</b>\n'
-        f'Количество активных: <b><u>{subscription_active_count}</u></b>',
+        f"<b>Статистика админа</b>\n\n"
+        f"<b>Курсы валют</b>\n"
+        f"Количество: <b><u>{count}</u></b>\n"
+        f"Диапазон значений: <b><u>{first_date} - {last_date}</u></b>\n\n"
+        f"<b>Подписки</b>\n"
+        f"Количество активных: <b><u>{subscription_active_count}</u></b>",
         update=update, context=context,
         parse_mode=ParseMode.HTML,
         severity=SeverityEnum.INFO,
-        reply_markup=get_reply_keyboard(update, context)
+        reply_markup=get_reply_keyboard(update, context),
     )
 
 
@@ -209,11 +245,11 @@ def on_select_date(update: Update, context: CallbackContext):
         date = MetalRate.get_last_date()
         reply_message(
             "Пожалуйста, выберите дату:",
-            update=update, context=context,
+            update=update,
+            context=context,
             reply_markup=telegramcalendar.create_calendar(
-                year=date.year,
-                month=date.month
-            )
+                year=date.year, month=date.month
+            ),
         )
         return
 
@@ -223,12 +259,12 @@ def on_select_date(update: Update, context: CallbackContext):
 
     selected, for_date = telegramcalendar.process_calendar_selection(bot, update)
     if selected:
-        msg_not_found_for_date = ''
+        msg_not_found_for_date = ""
 
         metal_rate: MetalRate = MetalRate.get_by(for_date)
         if not metal_rate:
             msg_not_found_for_date = SeverityEnum.INFO.get_text(
-                f'За {get_date_str(for_date)} нет данных, будет выбрана ближайшая дата'
+                f"За {get_date_str(for_date)} нет данных, будет выбрана ближайшая дата"
             )
             prev_date, next_date = MetalRate.get_prev_next_dates(for_date)
             for_date = next_date if next_date else prev_date
@@ -236,7 +272,7 @@ def on_select_date(update: Update, context: CallbackContext):
 
         text = metal_rate.get_description(show_diff=True)
         if msg_not_found_for_date:
-            text = msg_not_found_for_date + '\n\n' + text
+            text = msg_not_found_for_date + "\n\n" + text
 
         reply_text_or_edit_with_keyboard(
             message=update.effective_message,
@@ -284,10 +320,10 @@ def on_get_all_as_chart(update: Update, context: CallbackContext):
         number=-1,
         reply_buttons_bottom=[
             InlineKeyboardButton(
-                text='Посмотреть за определенный год',
+                text="Посмотреть за определенный год",
                 callback_data=fill_string_pattern(
                     PATTERN_INLINE_GET_CHART_METAL_BY_YEAR, DEFAULT_METAL.name, -1
-                )
+                ),
             ),
         ],
     )
@@ -346,9 +382,9 @@ def on_subscribe(update: Update, context: CallbackContext):
     result = Subscription.subscribe(user_id)
     match result:
         case SubscriptionResultEnum.ALREADY:
-            text = 'Подписка уже оформлена!'
+            text = "Подписка уже оформлена!"
         case SubscriptionResultEnum.SUBSCRIBE_OK:
-            text = 'Подписка успешно оформлена!'
+            text = "Подписка успешно оформлена!"
         case _:
             raise Exception(f'Неожиданный результат {result} для метода "subscribe"!')
 
@@ -369,9 +405,9 @@ def on_unsubscribe(update: Update, context: CallbackContext):
     result = Subscription.unsubscribe(user_id)
     match result:
         case SubscriptionResultEnum.ALREADY:
-            text = 'Подписка не оформлена!'
+            text = "Подписка не оформлена!"
         case SubscriptionResultEnum.UNSUBSCRIBE_OK:
-            text = 'Вы успешно отписались'
+            text = "Вы успешно отписались"
         case _:
             raise Exception(f'Неожиданный результат {result} для метода "unsubscribe"!')
 
@@ -387,7 +423,7 @@ def on_unsubscribe(update: Update, context: CallbackContext):
 @log_func(log)
 def on_request(update: Update, context: CallbackContext):
     reply_message(
-        'Неизвестная команда',
+        "Неизвестная команда",
         update=update,
         context=context,
         reply_markup=get_reply_keyboard(update, context),
@@ -401,26 +437,60 @@ def on_error(update: Update, context: CallbackContext):
 
 
 def setup(dp: Dispatcher):
-    dp.add_handler(CommandHandler('start', on_start))
+    dp.add_handler(CommandHandler("start", on_start))
 
     dp.add_handler(CommandHandler(COMMAND_ADMIN_STATS, on_admin_stats, FILTER_BY_ADMIN))
-    dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_ADMIN_STATS) & FILTER_BY_ADMIN, on_admin_stats))
+    dp.add_handler(
+        MessageHandler(
+            Filters.regex(PATTERN_REPLY_ADMIN_STATS) & FILTER_BY_ADMIN, on_admin_stats
+        )
+    )
 
-    dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_GET_AS_TEXT), on_get_as_text))
-    dp.add_handler(CallbackQueryHandler(on_get_as_text, pattern=PATTERN_INLINE_GET_BY_DATE))
+    dp.add_handler(
+        MessageHandler(Filters.regex(PATTERN_REPLY_GET_AS_TEXT), on_get_as_text)
+    )
+    dp.add_handler(
+        CallbackQueryHandler(on_get_as_text, pattern=PATTERN_INLINE_GET_BY_DATE)
+    )
 
-    dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_SELECT_DATE), on_select_date))
-    dp.add_handler(CallbackQueryHandler(on_select_date, pattern=PATTERN_INLINE_SELECT_DATE))
+    dp.add_handler(
+        MessageHandler(Filters.regex(PATTERN_REPLY_SELECT_DATE), on_select_date)
+    )
+    dp.add_handler(
+        CallbackQueryHandler(on_select_date, pattern=PATTERN_INLINE_SELECT_DATE)
+    )
 
-    dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_GET_LAST_7_AS_CHART), on_get_last_7_as_chart))
-    dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_GET_LAST_31_AS_CHART), on_get_last_31_as_chart))
-    dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_GET_ALL_AS_CHART), on_get_all_as_chart))
-    dp.add_handler(CallbackQueryHandler(on_callback_get_as_chart, pattern=PATTERN_INLINE_GET_AS_CHART))
+    dp.add_handler(
+        MessageHandler(
+            Filters.regex(PATTERN_REPLY_GET_LAST_7_AS_CHART), on_get_last_7_as_chart
+        )
+    )
+    dp.add_handler(
+        MessageHandler(
+            Filters.regex(PATTERN_REPLY_GET_LAST_31_AS_CHART), on_get_last_31_as_chart
+        )
+    )
+    dp.add_handler(
+        MessageHandler(
+            Filters.regex(PATTERN_REPLY_GET_ALL_AS_CHART), on_get_all_as_chart
+        )
+    )
+    dp.add_handler(
+        CallbackQueryHandler(
+            on_callback_get_as_chart, pattern=PATTERN_INLINE_GET_AS_CHART
+        )
+    )
 
-    dp.add_handler(CallbackQueryHandler(on_get_all_by_year, pattern=PATTERN_INLINE_GET_CHART_METAL_BY_YEAR))
+    dp.add_handler(
+        CallbackQueryHandler(
+            on_get_all_by_year, pattern=PATTERN_INLINE_GET_CHART_METAL_BY_YEAR
+        )
+    )
 
     dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_SUBSCRIBE), on_subscribe))
-    dp.add_handler(MessageHandler(Filters.regex(PATTERN_REPLY_UNSUBSCRIBE), on_unsubscribe))
+    dp.add_handler(
+        MessageHandler(Filters.regex(PATTERN_REPLY_UNSUBSCRIBE), on_unsubscribe)
+    )
 
     dp.add_handler(MessageHandler(Filters.text, on_request))
 
