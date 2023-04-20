@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-__author__ = 'ipetrash'
+__author__ = "ipetrash"
 
 
 import datetime as DT
@@ -13,15 +13,28 @@ from typing import Type, Optional, Iterable
 
 # pip install peewee
 from peewee import (
-    Model, TextField, ForeignKeyField, CharField, DecimalField, DateField, Field, IntegerField, BooleanField,
-    DateTimeField
+    Model,
+    TextField,
+    ForeignKeyField,
+    CharField,
+    DecimalField,
+    DateField,
+    Field,
+    IntegerField,
+    BooleanField,
+    DateTimeField,
 )
 from playhouse.sqliteq import SqliteQueueDatabase
 
 from app_parser.config import START_DATE
 from app_parser import parser
 from root_config import DB_FILE_NAME
-from root_common import get_date_str, get_start_date, get_end_date, SubscriptionResultEnum
+from root_common import (
+    get_date_str,
+    get_start_date,
+    get_end_date,
+    SubscriptionResultEnum,
+)
 
 
 ITEMS_PER_PAGE: int = 10
@@ -33,7 +46,7 @@ def shorten(text: str, length=30) -> str:
         return text
 
     if len(text) > length:
-        text = text[:length] + '...'
+        text = text[:length] + "..."
 
     return text
 
@@ -43,14 +56,14 @@ def shorten(text: str, length=30) -> str:
 db = SqliteQueueDatabase(
     DB_FILE_NAME,
     pragmas={
-        'foreign_keys': 1,
-        'journal_mode': 'wal',    # WAL-mode
-        'cache_size': -1024 * 64  # 64MB page-cache
+        "foreign_keys": 1,
+        "journal_mode": "wal",     # WAL-mode
+        "cache_size": -1024 * 64,  # 64MB page-cache
     },
     use_gevent=False,     # Use the standard library "threading" module.
     autostart=True,
     queue_max_size=64,    # Max. # of pending writes that can accumulate.
-    results_timeout=5.0   # Max. time to wait for query to be executed.
+    results_timeout=5.0,  # Max. time to wait for query to be executed.
 )
 
 
@@ -62,25 +75,25 @@ class BaseModel(Model):
     class Meta:
         database = db
 
-    def get_new(self) -> Type['BaseModel']:
+    def get_new(self) -> Type["BaseModel"]:
         return type(self).get(self._pk_expr())
 
     @classmethod
-    def get_first(cls) -> Type['BaseModel']:
+    def get_first(cls) -> Type["BaseModel"]:
         return cls.select().first()
 
     @classmethod
-    def get_last(cls) -> Type['BaseModel']:
+    def get_last(cls) -> Type["BaseModel"]:
         return cls.select().order_by(cls.id.desc()).first()
 
     @classmethod
     def paginating(
-            cls,
-            page: int = 1,
-            items_per_page: int = ITEMS_PER_PAGE,
-            order_by: Field = None,
-            filters: Iterable = None,
-    ) -> list[Type['BaseModel']]:
+        cls,
+        page: int = 1,
+        items_per_page: int = ITEMS_PER_PAGE,
+        order_by: Field = None,
+        filters: Iterable = None,
+    ) -> list[Type["BaseModel"]]:
         query = cls.select()
 
         if filters:
@@ -93,7 +106,7 @@ class BaseModel(Model):
         return list(query)
 
     @classmethod
-    def get_inherited_models(cls) -> list[Type['BaseModel']]:
+    def get_inherited_models(cls) -> list[Type["BaseModel"]]:
         return sorted(cls.__subclasses__(), key=lambda x: x.__name__)
 
     @classmethod
@@ -106,9 +119,9 @@ class BaseModel(Model):
         for sub_cls in cls.get_inherited_models():
             name = sub_cls.__name__
             count = sub_cls.count()
-            items.append(f'{name}: {count}')
+            items.append(f"{name}: {count}")
 
-        print(', '.join(items))
+        print(", ".join(items))
 
     def __str__(self):
         fields = []
@@ -123,13 +136,13 @@ class BaseModel(Model):
                     v = repr(shorten(v))
 
             elif isinstance(field, ForeignKeyField):
-                k = f'{k}_id'
+                k = f"{k}_id"
                 if v:
                     v = v.id
 
-            fields.append(f'{k}={v}')
+            fields.append(f"{k}={v}")
 
-        return self.__class__.__name__ + '(' + ', '.join(fields) + ')'
+        return self.__class__.__name__ + "(" + ", ".join(fields) + ")"
 
 
 class MetalRate(BaseModel):
@@ -143,7 +156,7 @@ class MetalRate(BaseModel):
         return get_date_str(self.date)
 
     @classmethod
-    def get_by(cls, date: DT.date) -> Optional['MetalRate']:
+    def get_by(cls, date: DT.date) -> Optional["MetalRate"]:
         return cls.get_or_none(date=date)
 
     def get_description(self, show_diff: bool = False) -> str:
@@ -156,37 +169,37 @@ class MetalRate(BaseModel):
                 abs_diff = int(abs_diff)
             else:
                 # Иначе вещественным, но с точностью в 2 знака
-                abs_diff = f'{abs_diff:.2f}'
+                abs_diff = f"{abs_diff:.2f}"
 
             sign = "-" if diff < 0 else "+"
-            return f'{sign}{abs_diff}'
+            return f"{sign}{abs_diff}"
 
         prev_date, _ = self.get_prev_next_dates(self.date)
-        text_diff_gold = text_diff_silver = text_diff_platinum = text_diff_palladium = ''
+        text_diff_gold = text_diff_silver = text_diff_platinum = text_diff_palladium = ""
         if prev_date and show_diff:
             prev_metal = self.get_by(prev_date)
-            text_diff_gold = f' ({get_diff_str(prev_metal.gold, self.gold)})'
-            text_diff_silver = f' ({get_diff_str(prev_metal.silver, self.silver)})'
-            text_diff_platinum = f' ({get_diff_str(prev_metal.platinum, self.platinum)})'
-            text_diff_palladium = f' ({get_diff_str(prev_metal.palladium, self.palladium)})'
+            text_diff_gold = f" ({get_diff_str(prev_metal.gold, self.gold)})"
+            text_diff_silver = f" ({get_diff_str(prev_metal.silver, self.silver)})"
+            text_diff_platinum = f" ({get_diff_str(prev_metal.platinum, self.platinum)})"
+            text_diff_palladium = f" ({get_diff_str(prev_metal.palladium, self.palladium)})"
 
         return (
-            f'{get_date_str(self.date)}:\n'
-            f'    Золото: {self.gold:.2f}{text_diff_gold}\n'
-            f'    Серебро: {self.silver:.2f}{text_diff_silver}\n'
-            f'    Платина: {self.platinum:.2f}{text_diff_platinum}\n'
-            f'    Палладий: {self.palladium:.2f}{text_diff_palladium}'
+            f"{get_date_str(self.date)}:\n"
+            f"    Золото: {self.gold:.2f}{text_diff_gold}\n"
+            f"    Серебро: {self.silver:.2f}{text_diff_silver}\n"
+            f"    Платина: {self.platinum:.2f}{text_diff_platinum}\n"
+            f"    Палладий: {self.palladium:.2f}{text_diff_palladium}"
         )
 
     @classmethod
     def add(
-            cls,
-            date: DT.date,
-            gold: Decimal = None,
-            silver: Decimal = None,
-            platinum: Decimal = None,
-            palladium: Decimal = None,
-    ) -> 'MetalRate':
+        cls,
+        date: DT.date,
+        gold: Decimal = None,
+        silver: Decimal = None,
+        platinum: Decimal = None,
+        palladium: Decimal = None,
+    ) -> "MetalRate":
         obj = cls.get_by(date)
         if not obj:
             obj = cls.create(
@@ -200,7 +213,7 @@ class MetalRate(BaseModel):
         return obj
 
     @classmethod
-    def add_from(cls, metal_rate: parser.MetalRate) -> 'MetalRate':
+    def add_from(cls, metal_rate: parser.MetalRate) -> "MetalRate":
         return cls.add(
             date=metal_rate.date,
             gold=metal_rate.gold,
@@ -213,15 +226,28 @@ class MetalRate(BaseModel):
     def get_range_dates(cls) -> tuple[DT.date, DT.date]:
         return (
             cls.select(cls.date).limit(1).order_by(cls.date.asc()).first().date,
-            cls.select(cls.date).limit(1).order_by(cls.date.desc()).first().date
+            cls.select(cls.date).limit(1).order_by(cls.date.desc()).first().date,
         )
 
     @classmethod
     def get_prev_next_dates(cls, date: DT.date) -> tuple[DT.date, DT.date]:
-        prev_val = cls.select(cls.date).where(cls.date < date).limit(1).order_by(cls.date.desc()).first()
+        prev_val = (
+            cls.select(cls.date)
+            .where(cls.date < date)
+            .limit(1)
+            .order_by(cls.date.desc())
+            .first()
+        )
         prev_date = prev_val.date if prev_val else None
 
-        next_val = cls.select(cls.date).where(cls.date > date).limit(1).order_by(cls.date.asc()).first()
+        next_val = (
+            cls
+            .select(cls.date)
+            .where(cls.date > date)
+            .limit(1)
+            .order_by(cls.date.asc())
+            .first()
+        )
         next_date = next_val.date if next_val else None
 
         return prev_date, next_date
@@ -230,23 +256,25 @@ class MetalRate(BaseModel):
     def get_prev_next_years(cls, year: int) -> tuple[int, int]:
         filters = [cls.date < get_start_date(year)]
         prev_val = (
-            cls.select(cls.date)
-                .distinct()
-                .where(*filters)
-                .limit(1)
-                .order_by(cls.date.desc())
-                .first()
+            cls
+            .select(cls.date)
+            .distinct()
+            .where(*filters)
+            .limit(1)
+            .order_by(cls.date.desc())
+            .first()
         )
         prev_year = prev_val.date.year if prev_val else None
 
         filters = [cls.date > get_end_date(year)]
         next_val = (
-            cls.select(cls.date)
-                .distinct()
-                .where(*filters)
-                .limit(1)
-                .order_by(cls.date.asc())
-                .first()
+            cls
+            .select(cls.date)
+            .distinct()
+            .where(*filters)
+            .limit(1)
+            .order_by(cls.date.asc())
+            .first()
         )
         next_year = next_val.date.year if next_val else None
 
@@ -265,7 +293,11 @@ class MetalRate(BaseModel):
         return items
 
     @classmethod
-    def get_last_rates(cls, number: int = -1, ignore_null: bool = True) -> list['MetalRate']:
+    def get_last_rates(
+        cls,
+        number: int = -1,
+        ignore_null: bool = True,
+    ) -> list["MetalRate"]:
         dates = cls.get_last_dates(number)
         filters = [cls.date.in_(dates)]
         if ignore_null:
@@ -281,14 +313,15 @@ class MetalRate(BaseModel):
         return list(query)
 
     @classmethod
-    def get_all_by_year(cls, year: int) -> list['MetalRate']:
+    def get_all_by_year(cls, year: int) -> list["MetalRate"]:
         query = (
-            cls.select()
-                .where(
-                    cls.date >= get_start_date(year),
-                    cls.date <= get_end_date(year)
-                )
-                .order_by(cls.date.asc())
+            cls
+            .select()
+            .where(
+                cls.date >= get_start_date(year),
+                cls.date <= get_end_date(year)
+            )
+            .order_by(cls.date.asc())
         )
         return list(query)
 
@@ -301,7 +334,7 @@ class Subscription(BaseModel):
     modification_datetime = DateTimeField(default=DT.datetime.now)
 
     @classmethod
-    def get_by_user_id(cls, user_id: int) -> Optional['Subscription']:
+    def get_by_user_id(cls, user_id: int) -> Optional["Subscription"]:
         return cls.get_or_none(cls.user_id == user_id)
 
     @classmethod
@@ -332,7 +365,7 @@ class Subscription(BaseModel):
         return SubscriptionResultEnum.UNSUBSCRIBE_OK
 
     @classmethod
-    def get_active_unsent_subscriptions(cls) -> list['Subscription']:
+    def get_active_unsent_subscriptions(cls) -> list["Subscription"]:
         return cls.select().where(cls.was_sending == False, cls.is_active == True)
 
     @classmethod
@@ -351,7 +384,7 @@ class Settings(BaseModel):
     last_date_of_metals_rate = DateField(null=True)
 
     @classmethod
-    def instance(cls) -> 'Settings':
+    def instance(cls) -> "Settings":
         obj = cls.get_first()
         if not obj:
             obj = cls.create()
@@ -377,31 +410,31 @@ db.create_tables(BaseModel.get_inherited_models())
 time.sleep(0.050)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     BaseModel.print_count_of_tables()
     # MetalRate: 5516
     print()
 
-    print('Last date:', MetalRate.get_last_date())
+    print("Last date:", MetalRate.get_last_date())
     # Last date: 2022-03-31
 
     start_date, end_date = MetalRate.get_range_dates()
-    print(f'Range dates: {start_date} - {end_date}')
+    print(f"Range dates: {start_date} - {end_date}")
     # Range dates: 2000-01-06 - 2022-03-31
 
     print()
 
-    print(f'Last metal rate (by date):\n    {MetalRate.get_by(end_date)}\n')
+    print(f"Last metal rate (by date):\n    {MetalRate.get_by(end_date)}\n")
     # Last metal rate (by date):
     #     MetalRate(id=5516, date=2022-03-31, gold=5184.57, silver=66.92, platinum=2660.14, palladium=5839.34)
 
-    print(f'Last metal rate (by method):\n    {MetalRate.get_last()}\n')
+    print(f"Last metal rate (by method):\n    {MetalRate.get_last()}\n")
     # Last metal rate (by method):
     #     MetalRate(id=5516, date=2022-03-31, gold=5184.57, silver=66.92, platinum=2660.14, palladium=5839.34)
 
     print()
 
-    date = DT.date.fromisoformat('2022-03-24')
+    date = DT.date.fromisoformat("2022-03-24")
     print(MetalRate.get_prev_next_dates(date))
     # (datetime.date(2022, 3, 23), datetime.date(2022, 3, 25))
 
@@ -414,7 +447,7 @@ if __name__ == '__main__':
     print()
 
     dates = MetalRate.get_last_dates(number=7)
-    print('Last 7 dates:', [str(d) for d in dates])
+    print("Last 7 dates:", [str(d) for d in dates])
     # Last 7 dates: ['2022-03-31', '2022-03-30', '2022-03-29', '2022-03-26', '2022-03-25', '2022-03-24', '2022-03-23']
 
     print()
