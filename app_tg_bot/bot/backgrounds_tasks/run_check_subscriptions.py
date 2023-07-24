@@ -7,6 +7,7 @@ __author__ = "ipetrash"
 import time
 
 from telegram import Bot, ParseMode
+from telegram.error import BadRequest
 
 from app_tg_bot.bot.common import caller_name, get_logger
 from app_tg_bot.config import TOKEN, DIR_LOGS
@@ -36,14 +37,23 @@ def sending_notifications():
 
             text = f"<b>Рассылка</b>\n{MetalRate.get_last().get_description(show_diff=True)}"
             for subscription in subscriptions:
-                bot.send_message(
-                    chat_id=subscription.user_id,  # Для приватных чатов chat_id равен user_id
-                    text=text,
-                    parse_mode=ParseMode.HTML,
-                )
+                try:
+                    bot.send_message(
+                        chat_id=subscription.user_id,  # Для приватных чатов chat_id равен user_id
+                        text=text,
+                        parse_mode=ParseMode.HTML,
+                    )
 
-                subscription.was_sending = True
-                subscription.save()
+                    subscription.was_sending = True
+                    subscription.save()
+
+                except BadRequest as e:
+                    if "Chat not found" in str(e):
+                        log.info(f"Рассылка невозможна: пользователь #{subscription.user_id} не найден")
+                        subscription.is_active = False
+                        subscription.save()
+                    else:
+                        raise e
 
                 time.sleep(0.4)
 
