@@ -7,7 +7,6 @@ __author__ = "ipetrash"
 import time
 
 from telegram import Bot, ParseMode
-from telegram.error import BadRequest
 
 from app_tg_bot.bot.common import caller_name, get_logger
 from app_tg_bot.config import TOKEN, DIR_LOGS
@@ -47,13 +46,21 @@ def sending_notifications():
                     subscription.was_sending = True
                     subscription.save()
 
-                except BadRequest as e:
-                    if "Chat not found" in str(e):
+                except Exception as e:
+                    text_error = str(e)
+
+                    need_deactivate = False
+
+                    if "Chat not found" in text_error:
                         log.info(f"Рассылка невозможна: пользователь #{subscription.user_id} не найден")
+                        need_deactivate = True
+                    elif "bot was blocked by the user" in text_error:
+                        log.info(f"Рассылка невозможна: пользователь #{subscription.user_id} заблокировал бота")
+                        need_deactivate = True
+
+                    if need_deactivate:
                         subscription.is_active = False
                         subscription.save()
-                    else:
-                        raise e
 
                 time.sleep(0.4)
 
